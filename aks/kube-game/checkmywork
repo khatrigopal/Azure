@@ -1,0 +1,9 @@
+#!/bin/bash
+
+var1=$(cat ./youranswer)
+address=$(curl $var1 > /tmp/checkmywork)
+grep 3F9YKGT /tmp/checkmywork 
+if [ $? -eq 0 ]
+then
+   cowsay "You win this Game. You're free to go"
+fi
