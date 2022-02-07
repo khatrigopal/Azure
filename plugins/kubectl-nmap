@@ -1,0 +1,34 @@
+#!/bin/bash
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo $serverIP
+    echo "Starting NMAP Test"
+    #wget https://github.com/yunchih/static-binaries/raw/master/iperf3
+    #chmod +x ./iperf3
+    echo "Upload nmap on Pod"
+    kubectl cp ./nmap $2:/tmp/nmap
+    echo "Starting tests"
+    kubectl exec $2 -- /tmp/nmap $serverIP > ./nmaptest
+    echo "Done"
+
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl Bandwidth Test Plugin v0.20211122"
+echo "Usage: kubectl nmap <pod>"

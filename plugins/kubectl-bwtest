@@ -1,0 +1,39 @@
+#!/bin/bash
+$port=2333
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo $serverIP
+    echo "Starting Iperf3 Bandwidth Tests"
+    #wget https://github.com/yunchih/static-binaries/raw/master/iperf3
+    #chmod +x ./iperf3
+    echo "Upload IPerf on Server Pod"
+    kubectl cp ./iperf3 $2:/tmp/iperf3
+    echo "Upload Iperf on Client Pod"
+    kubectl cp ./iperf3 $3:/tmp/iperf3
+    echo "Starting Server"
+    kubectl exec $2 -- /tmp/iperf3 -s -p $4 -D $
+    echo "Running Client Test"
+    kubectl exec $3 -- /tmp/iperf3 -c $serverIP -p $4 -bidir -t 30 > ./bwreport
+    echo "Done"
+
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl Bandwidth Test Plugin v0.20211122"
+echo "Usage: kubectl bwtest <pod server> <pod client> <port>"
