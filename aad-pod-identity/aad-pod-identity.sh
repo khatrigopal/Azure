@@ -1,6 +1,6 @@
 az aks create -n aad -g aad --generate-ssh-keys --node-count 1 --network-plugin azure --network-policy calico
 
-export SUBSCRIPTION_ID="d53beca8-7450-4196-a689-84cf17f3bfe3"
+export SUBSCRIPTION_ID="d53beca8-7450-4196-a689-84cf17f3xxxx"
 echo $SUBSCRIPTION_ID
 
 export RESOURCE_GROUP="aad"
