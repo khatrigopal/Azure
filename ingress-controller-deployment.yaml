@@ -1,0 +1,86 @@
+#kubectl create secret tls ovidiu --key ./tls.key --cert ./tls.crt
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ovidiu
+spec:
+  tls:
+  - hosts:
+     - ovidiu.systems
+    secretName: ovidiu
+  ingressClassName: nginx
+  rules:
+    - host: ovidiu.systems
+      http:
+        paths:
+          - pathType: Prefix
+            backend:
+              service:
+                name: myservice
+                port:
+                  number: 80
+            path: /
+			
+			
+			
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: ovidiu
+  name: ovidiu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ovidiu
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: ovidiu
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
+
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2022-04-02T10:40:32Z"
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app: ovidiu
+  name: ovidiu
+  namespace: default
+  resourceVersion: "9004"
+  uid: e17ab8c7-b203-4fc5-a92f-d99264cdce30
+spec:
+  clusterIP: 10.0.152.232
+  clusterIPs:
+  - 10.0.152.232
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: ovidiu
+  sessionAffinity: None
+  type: ClusterIP
