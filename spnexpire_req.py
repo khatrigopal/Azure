@@ -50,8 +50,10 @@ datetime_str = expire_day + "/" + expire_month_number + "/" + expire_year[-2:]
 datetime_expire = datetime.strptime(datetime_str, '%d/%m/%y')
 day_of_year_expire = datetime_expire.timetuple().tm_yday  # returns 1 for January 1st
 
-if current_year <= expire_year and day_of_year_current <= day_of_year_expire - alert_window:
-    print("Warning! SPN Will expire in ", alert_window)
+#print (expire_year, day_of_year_current, (day_of_year_expire - alert_window))
+
+if (current_year <= expire_year) and (day_of_year_current >= (day_of_year_expire - alert_window)):
+    print("Warning! SPN Will expire in <=", alert_window, "\n")
 else:
-	print("We are good for now!")
+  print("We are good now now \n")
 print ("SPN will expire in ", expire_year, expire_month, expire_day)
