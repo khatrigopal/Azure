@@ -1,0 +1,69 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: disable-node-exporter-service
+  name: node-logs-exporter
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: disable-node-exporter-service
+      tier: node
+  template:
+    metadata:
+      labels:
+        component: disable-node-exporter-service
+        tier: node
+    spec:
+      nodeName: aks-nodepool1-40846148-vmss000000
+      containers:
+        - command:
+            - nsenter
+            - --target
+            - "1"
+            - --mount
+            - --uts
+            - --ipc
+            - --net
+            - --pid
+            - --
+            - sh
+            - -c
+            - |
+              date > /tmp/date.report
+              hostname > /tmp/hostname.report
+              ps aux > /tmp/processes.report
+              ss -tulpan > /tmp/network.report
+              iptables.save > /tmp/iptables.report
+              conntrack -S > /tmp/conntrack.report
+              crictl ps > /tmp/crictl.report
+              nc -vz -w 2 mcr.microsoft.com 443
+              if [ $? -eq 0 ]; then
+                echo "Port 443 Up" > /tmp/net.report
+              else
+               echo "Port 443 Down" > /tmp/net.report
+              fi
+              top -b -n 1 > /tmp/top.report
+              free > /tmp/free.report
+              df -h > /tmp/freedisk.report
+              tar -cvzf /tmp/AKS_backup.tgz /var/log/journal /var/log/azure-vnet* /tmp/*.report
+              sleep 600000000s
+          image: alpine
+          imagePullPolicy: IfNotPresent
+          name: disable-node-exporter-service
+          resources:
+            requests:
+              cpu: 10m
+          securityContext:
+            privileged: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      restartPolicy: Always
+  updateStrategy:
+    type: OnDelete
