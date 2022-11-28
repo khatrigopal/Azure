@@ -1,0 +1,27 @@
+
+# Cluster Autoscaler Annotation
+cluster-autoscaler.kubernetes.io/scale-down-disabled=true
+kubectl annotate node kubectl annotate node aks-nodepool1-79955018-vmss000002 cluster-autoscaler.kubernetes.io/scale-down-disabled=true
+
+
+# Getting metrics cdvisor
+kubectl get --raw /api/v1/nodes/<NODE_NAME>/proxy/metrics/cadvisor
+
+# API Server check
+az vmss run-command invoke -g MC_AKS_AKS_WESTEUROPE -n aks-nodepool1-79955018-vmss --command-id RunShellScript --instance-id 4 -
+-query 'value[0].message' -otsv --scripts  "nc -v -w 2 aks-aks-aa1792-e3fafdea.hcp.westeurope.azmk8s.io 443"
+
+journalctl -D . -u kubelet>Kubelet.txt 
+journalctl -D . -u docker>docker.txt 
+ 
+journalctl -u kubelet --file system.journal 
+journalctl -u kubelet --file system.journal -r  
+ 
+journalctl -u docker --file system.journal 
+journalctl -u docker --file system.journal -r  
+ 
+journalctl -S "2020-10-30 13:00:00" -U "2020-10-30 18:00:00"  --file system.journal 
+journalctl -S "2020-10-30 13:00:00" -U "2020-10-30 18:00:00"  --file system.journal -r 
+
+crictl rmi --prune
+
