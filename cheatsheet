@@ -25,3 +25,8 @@ journalctl -S "2020-10-30 13:00:00" -U "2020-10-30 18:00:00"  --file system.jour
 
 crictl rmi --prune
 
+# Getting the Nodes where CoreDNS is running
+kubectl get po --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].spec.nodeName}')
+
+#Get the CoreDNS IP Address
+k get po --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].status.podIP}'
