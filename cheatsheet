@@ -30,3 +30,8 @@ kubectl get po --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[
 
 #Get the CoreDNS IP Address
 k get po --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].status.podIP}'
+
+----------
+IPS=$(k get po --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].status.podIP}')
+for node in $IPS; do echo $node; done
+--------
