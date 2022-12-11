@@ -37,5 +37,6 @@ for node in $IPS; do echo $node; done
 --------
 # Get images of a pod
 kubectl get pods --namespace=calico-system -o jsonpath="{.items[*].spec.containers[*].image}" | tr -s '[[:space:]]' '\n' | sort | uniq -c
-
+-----------
+while true; do nslookup zoso.ro; sleep 0.2; done
 
