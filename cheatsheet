@@ -41,4 +41,15 @@ kubectl get pods --namespace=calico-system -o jsonpath="{.items[*].spec.containe
 while true; do nslookup zoso.ro; sleep 0.2; done
 -----------
 for i in {1..2000}; do nc -zv 20.86.222.46 80; sleep 0.5; done
+--------
+# Extract the Cluster Certificate Authorithy
+$ kubectl config view --minify --raw --output 'jsonpath={..cluster.certificate-authority-data}' | base64 -d | openssl x509 -text -out -
+--------
+
+# Get Certificate from .kube/config
+kubectl config view --minify --raw --output 'jsonpath={..user.client-certificate-data}' | base64 -d | openssl x509 -text -out -
+----------
+# Extract the Client Certificate
+$kubectl config view --minify --raw --output 'jsonpath={..user.client-certificate-data}' | base64 -d | openssl x509 -text -out -
+
 
