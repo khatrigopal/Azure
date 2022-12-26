@@ -1,0 +1,118 @@
+
+Now let's deploy a simple empire demo application. It is made of several microservices, each identified by Kubernetes labels:
+
+the Death Star: org=empire, class=deathstar
+the Imperial TIE fighter: org=empire, class=tiefighter
+the Rebel X-Wing: org=alliance, class=xwing
+The deployment also includes a deathstar-service, which load-balances traffic to all pods with label org=empire, class=deathstar.
+
+Let's install everything via the manifest http-sw-app.yaml:
+
+#kubectl apply -f https://raw.githubusercontent.com/cilium/cilium/HEAD/examples/minikube/http-sw-app.yaml
+
+
+Each pod will go through several states until it reaches Running at which point the pod is ready. Re-launch the command until all pods are in a Running state.
+
+Each pod will also be represented in Cilium as an Endpoint. To retrieve a list of all endpoints managed by Cilium, the Cilium Endpoint (or cep) resource can be used:
+#kubectl get cep --all-namespaces
+
+kubectl exec tiefighter -- curl -s -XPOST deathstar.default.svc.cluster.local/v1/request-landing
+kubectl exec xwing -- curl -s -XPOST deathstar.default.svc.cluster.local/v1/request-landing
+
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "rule1"
+spec:
+  description: "L3-L4 policy to restrict deathstar access to empire ships only"
+  endpointSelector:
+    matchLabels:
+      org: empire
+      class: deathstar
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        org: empire
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+		
+-------------------------------
+
+kubectl exec tiefighter -- curl -s -XPOST deathstar.default.svc.cluster.local/v1/request-landing
+
+kubectl exec xwing -- curl -s -XPOST deathstar.default.svc.cluster.local/v1/request-landing (timeout)
+
+kubectl exec tiefighter -- curl -s -XPUT deathstar.default.svc.cluster.local/v1/exhaust-port
+
+
+L7 Policy
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "rule1"
+spec:
+  description: "L7 policy to restrict access to specific HTTP call"
+  endpointSelector:
+    matchLabels:
+      org: empire
+      class: deathstar
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        org: empire
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+      rules:
+        http:
+        - method: "POST"
+          path: "/v1/request-landing"
+		  
+		  
+ kubectl exec tiefighter -- curl -s -XPUT deathstar.default.svc.cluster.local/v1/exhaust-port (Access Denied)
+ 
+ https://docs.cilium.io/en/v1.12/policy/language/#layer-3-examples
+ 
+
+---------
+
+End Test
+
+The death star was destroyed by an X-Wing. And what does the empire do? They built another death star. And this time we really have to ensure that no X-Wing can ever access it.
+
+Your task is to create a rule file under the name /root/policies/sneak.yaml, containing a rule called rule1 which restricts access to the death star via L3-L4 policies to empire ships only.
+
+ⓘ Notes:
+
+Your organization is called empire, you only want to allow ships of the class tiefighter
+The endpoint the ships should reach is of the class deathstar, and it belong to the organization empire
+We also want to limit to port 80 and the TCP protocol.
+Test TIE fighter access with kubectl exec tiefighter -- curl -s -XPOST deathstar.default.svc.cluster.local/v1/request-landing
+Test X-Wing access with kubectl exec xwing -- curl -s -XPOST deathstar.default.svc.cluster.local/v1/request-landing
+In the second tab, you can find the network policy editor which can help you creating the necessary rule.
+You might find Cilium documentation about L3/L4 policies helpful
+In the third tab you can find a simplified editor helping you with the creation and saving of the file.
+Make sure to save the policy file under the given name!
+You might need the command kubectl apply
+
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "empire"
+spec:
+  endpointSelector:
+    matchLabels:
+      class: deathstar
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        class: tiefighter
+  toPorts:
+  - ports:
+    - port: "80"
+      protocol: TCP
+
+
