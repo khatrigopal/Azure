@@ -1,0 +1,11 @@
+cat << EOF > ./coredns-logging.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  log.override: | # you may select any name here, but it must end with the .override file extension
+        log
+EOF
+kubectl apply -f ./coredns-logging.yaml
