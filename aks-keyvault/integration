@@ -1,0 +1,59 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: busybox-secrets-store-inline
+  namespace: nxrm
+spec:
+  containers:
+    - name: busybox
+      image: k8s.gcr.io/e2e-test-images/busybox:1.29
+      command:
+        - "/bin/sleep"
+        - "10000"
+      volumeMounts:
+      - name: secrets-store-inline
+        mountPath: "/mnt/secrets-store"
+        readOnly: true
+      env:
+      - name: SECRET_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: nxrm-db-secret
+            key: DemoSecret
+  volumes:
+    - name: secrets-store-inline
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "nxrm-nexus-secret-demosecret"
+        nodePublishSecretRef:                       
+          name: secrets-store-creds
+
+
+-----------
+
+
+
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: nxrm-nexus-secret-demosecret
+  namespace: nxrm
+spec:
+  provider: azure
+  secretObjects:
+    - data:
+        - key: DemoSecret
+          objectName: DemoSecret
+      secretName: nxrm-db-secret
+  parameters:
+    usePodIdentity: "false"
+    keyvaultName: nxrm-db-secret
+    objects:  |
+      array:
+        - |
+          objectName: DemoSecret
+          objectType: secret             # object types: secret, key or cert
+    tenantId: "tenant id"
