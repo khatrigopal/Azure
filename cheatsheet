@@ -52,4 +52,7 @@ kubectl config view --minify --raw --output 'jsonpath={..user.client-certificate
 # Extract the Client Certificate
 $kubectl config view --minify --raw --output 'jsonpath={..user.client-certificate-data}' | base64 -d | openssl x509 -text -out -
 
+# Get metrics from nodes
+k get --raw /api/v1/nodes/aks-nodepool1-12420863-vmss000003/proxy/metrics/cadvisor
+
 
