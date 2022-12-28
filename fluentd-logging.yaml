@@ -83,8 +83,8 @@ data:
     [OUTPUT]
         Name        azure
         Match       *
-        Customer_ID 2c0ea8de-98a0-4373-8702-683651f04997
-        Shared_Key  zsb3x9C5YtYX6YQzT5CcHoODaMaGcrFirAgsE8CXrIk2JzsWHNiKBdjmqZj1M5gQ5zkR2e9tRimYbTVczzNXUw==
+        Customer_ID YourId
+        Shared_Key  YourSharedKey
 
   parsers.conf: |
     [PARSER]
@@ -145,8 +145,8 @@ metadata:
   namespace: logging
 type: Opaque
 data:
-  WorkSpaceID: MmMwZWE4ZGUtOThhDG00MzczLTg3MDItNjgzNjUxZjA0OTk3Cg==
-  WorkspaceKey: enNiM3g5QzVZdFlY3lR4lQ1Q2NIb09EYU1hR2NyRmlyQWdzRThDWHJJazJKenNXSE5pS0Jkam1xWmoxTTVnUTV6a1IyZTl0UmltWWJUVmN6ek5YVXc9PQ==
+  WorkSpaceID: base64_encoded_WorkspaceId
+  WorkspaceKey: base64_encode_Key
 
   ---
 
