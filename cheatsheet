@@ -55,4 +55,7 @@ $kubectl config view --minify --raw --output 'jsonpath={..user.client-certificat
 # Get metrics from nodes
 k get --raw /api/v1/nodes/aks-nodepool1-12420863-vmss000003/proxy/metrics/cadvisor
 
+# Get Ingress IP address programatically
+INGRESS_IP=$(kubectl get ingress basic-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
 
