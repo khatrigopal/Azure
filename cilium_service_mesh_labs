@@ -1,0 +1,584 @@
+# Cilium Service Mesh
+
+kubectl apply -f /opt/bookinfo.yml
+```
+# Copyright Istio Authors
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+##################################################################################################
+# This file defines the services, service accounts, and deployments for the Bookinfo sample.
+#
+# To apply all 4 Bookinfo services, their corresponding service accounts, and deployments:
+#
+#   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml
+#
+# Alternatively, you can deploy any resource separately:
+#
+#   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml -l service=reviews # reviews Service
+#   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml -l account=reviews # reviews ServiceAccount
+#   kubectl apply -f samples/bookinfo/platform/kube/bookinfo.yaml -l app=reviews,version=v3 # reviews-v3 Deployment
+##################################################################################################
+
+##################################################################################################
+# Details service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: details
+  labels:
+    app: details
+    service: details
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: details
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookinfo-details
+  labels:
+    account: details
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: details-v1
+  labels:
+    app: details
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: details
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: details
+        version: v1
+    spec:
+      serviceAccountName: bookinfo-details
+      containers:
+      - name: details
+        image: docker.io/istio/examples-bookinfo-details-v1:1.16.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+        securityContext:
+          runAsUser: 1000
+---
+##################################################################################################
+# Ratings service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: ratings
+  labels:
+    app: ratings
+    service: ratings
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: ratings
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookinfo-ratings
+  labels:
+    account: ratings
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratings-v1
+  labels:
+    app: ratings
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ratings
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: ratings
+        version: v1
+    spec:
+      serviceAccountName: bookinfo-ratings
+      containers:
+      - name: ratings
+        image: docker.io/istio/examples-bookinfo-ratings-v1:1.16.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+        securityContext:
+          runAsUser: 1000
+---
+##################################################################################################
+# Reviews service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+    service: reviews
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: reviews
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookinfo-reviews
+  labels:
+    account: reviews
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v1
+  labels:
+    app: reviews
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v1
+    spec:
+      serviceAccountName: bookinfo-reviews
+      containers:
+      - name: reviews
+        image: docker.io/istio/examples-bookinfo-reviews-v1:1.16.2
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_DIR
+          value: "/tmp/logs"
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: wlp-output
+          mountPath: /opt/ibm/wlp/output
+        securityContext:
+          runAsUser: 1000
+      volumes:
+      - name: wlp-output
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v2
+  labels:
+    app: reviews
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v2
+    spec:
+      serviceAccountName: bookinfo-reviews
+      containers:
+      - name: reviews
+        image: docker.io/istio/examples-bookinfo-reviews-v2:1.16.2
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_DIR
+          value: "/tmp/logs"
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: wlp-output
+          mountPath: /opt/ibm/wlp/output
+        securityContext:
+          runAsUser: 1000
+      volumes:
+      - name: wlp-output
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reviews-v3
+  labels:
+    app: reviews
+    version: v3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reviews
+      version: v3
+  template:
+    metadata:
+      labels:
+        app: reviews
+        version: v3
+    spec:
+      serviceAccountName: bookinfo-reviews
+      containers:
+      - name: reviews
+        image: docker.io/istio/examples-bookinfo-reviews-v3:1.16.2
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: LOG_DIR
+          value: "/tmp/logs"
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: wlp-output
+          mountPath: /opt/ibm/wlp/output
+        securityContext:
+          runAsUser: 1000
+      volumes:
+      - name: wlp-output
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+---
+##################################################################################################
+# Productpage services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: productpage
+  labels:
+    app: productpage
+    service: productpage
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: productpage
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bookinfo-productpage
+  labels:
+    account: productpage
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-v1
+  labels:
+    app: productpage
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productpage
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: productpage
+        version: v1
+    spec:
+      serviceAccountName: bookinfo-productpage
+      containers:
+      - name: productpage
+        image: docker.io/istio/examples-bookinfo-productpage-v1:1.16.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          runAsUser: 1000
+      volumes:
+      - name: tmp
+        emptyDir: {}
+---
+
+```
+# Ingress
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: basic-ingress
+  namespace: default
+spec:
+  ingressClassName: cilium
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: details
+            port:
+              number: 9080
+        path: /details
+        pathType: Prefix
+      - backend:
+          service:
+            name: productpage
+            port:
+              number: 9080
+        path: /
+        pathType: Prefix
+		
+		
+		
+INGRESS_IP=$(kubectl get ingress basic-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')		
+curl -so /dev/null -w "%{http_code}\n" http://$INGRESS_IP/details/1
+
+curl -so /dev/null -w "%{http_code}\n" http://$INGRESS_IP/ratings
+
+kubectl patch svc cilium-ingress-basic-ingress --patch '{"spec": {"type": "LoadBalancer", "ports": [ { "name": "http", "port": 80, "protocol": "TCP", "targetPort": 80, "nodePort": 32100 } ] } }'
+
+hubble observe --namespace default
+
+hubble observe --namespace default -o json
+
+
+kubectl annotate pod -l app=productpage --overwrite io.cilium.proxy-visibility="<Ingress/9080/TCP/HTTP>"
+
+kubectl apply -f https://docs.isovalent.com/public/http-ingress-visibility.yaml
+
+hubble observe --protocol http --label app=reviews --port 9080
+
+#GRPC
+kubectl apply -f /opt/gcp-microservices-demo.yml
+curl -o demo.proto https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/master/pb/demo.proto
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grpc-ingress
+  namespace: default
+spec:
+  ingressClassName: cilium
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: productcatalogservice
+                port:
+                  number: 3550
+            path: /hipstershop.ProductCatalogService
+            pathType: Prefix
+          - backend:
+              service:
+                name: currencyservice
+                port:
+                  number: 7000
+            path: /hipstershop.CurrencyService
+            pathType: Prefix
+```
+
+grpcurl -plaintext -proto ./demo.proto $INGRESS_IP:80 hipstershop.CurrencyService/GetSupportedCurrencies
+
+
+kubectl create secret tls demo-cert --key=_wildcard.cilium.rocks-key.pem --cert=_wildcard.cilium.rocks.pem
+
+```
+piVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tls-ingress
+  namespace: default
+spec:
+  ingressClassName: cilium
+  rules:
+    - host: hipstershop.cilium.rocks
+      http:
+        paths:
+          - backend:
+              service:
+                name: productcatalogservice
+                port:
+                  number: 3550
+            path: /hipstershop.ProductCatalogService
+            pathType: Prefix
+          - backend:
+              service:
+                name: currencyservice
+                port:
+                  number: 7000
+            path: /hipstershop.CurrencyService
+            pathType: Prefix
+    - host: bookinfo.cilium.rocks
+      http:
+        paths:
+          - backend:
+              service:
+                name: details
+                port:
+                  number: 9080
+            path: /details
+            pathType: Prefix
+          - backend:
+              service:
+                name: productpage
+                port:
+                  number: 9080
+            path: /
+            pathType: Prefix
+  tls:
+    - hosts:
+        - bookinfo.cilium.rocks
+        - hipstershop.cilium.rocks
+      secretName: demo-cert
+
+```
+
+mkcert -install
+
+hubble observe --from-pod cilium-test/$CLIENT2 -f
+
+kubectl -n cilium-test apply -f https://raw.githubusercontent.com/cilium/cilium-cli/master/connectivity/manifests/client-egress-l7-http.yaml
+kubectl -n cilium-test apply -f https://raw.githubusercontent.com/cilium/cilium-cli/master/connectivity/manifests/client-egress-only-dns.yaml
+
+
+```
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideEnvoyConfig
+metadata:
+  name: envoy-lb-listener
+spec:
+  services:
+    - name: echo-other-node
+      namespace: cilium-test
+    - name: echo-same-node
+      namespace: cilium-test
+  resources:
+    - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+      name: envoy-lb-listener
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: envoy-lb-listener
+                rds:
+                  route_config_name: lb_route
+                http_filters:
+                  - name: envoy.filters.http.router
+    - "@type": type.googleapis.com/envoy.config.route.v3.RouteConfiguration
+      name: lb_route
+      virtual_hosts:
+        - name: "lb_route"
+          domains: [ "*" ]
+          routes:
+            - match:
+                prefix: "/"
+              route:
+                weighted_clusters:
+                  clusters:
+                    - name: "cilium-test/echo-same-node"
+                      weight: 50
+                    - name: "cilium-test/echo-other-node"
+                      weight: 50
+                retry_policy:
+                  retry_on: 5xx
+                  num_retries: 3
+                  per_try_timeout: 1s
+                regex_rewrite:
+                  pattern:
+                    google_re2: { }
+                    regex: "^/foo.*$"
+                  substitution: "/"
+    - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: "cilium-test/echo-same-node"
+      connect_timeout: 5s
+      lb_policy: ROUND_ROBIN
+      type: EDS
+      outlier_detection:
+        split_external_local_origin_errors: true
+        consecutive_local_origin_failure: 2
+    - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: "cilium-test/echo-other-node"
+      connect_timeout: 3s
+      lb_policy: ROUND_ROBIN
+      type: EDS
+      outlier_detection:
+        split_external_local_origin_errors: true
+        consecutive_local_origin_failure: 2
+		
+```
+for i in {1..10}; do
+  kubectl exec -it -n cilium-test $CLIENT2 -- curl -so /dev/null -w "%{http_code}\n" echo-same-node:8080
+done
+
+# Exam
+
+For this final challenge, you will need to deploy an app, create a NodePort Service to that app and expose it via Ciliums' Ingress controller.
+
+The image should be based on the gcr.io/google-samples/hello-app:1.0 image.
+The deployment should be called web.
+Expose the deployment using NodePort Service and port 8080.
+Check that a curl to any of the Node IPs over the allocated NodePort returns an output starting with "Hello, world!".
+Expose the NodePort Service to the outside of the cluster using Cilium Ingress:
+Using the built-in editor, view the Ingress specification ingress-exam.yaml
+Edit the 3 missing values.
+Make sure you save and apply the Ingress manifest.
+Access the app via a name hello-world.info
+curl hello-world.info should return an output starting with "Hello, world!"
+ⓘ Notes and tips:
+
+You may find this link useful. Note that we are not using minikube in this scenario but kind.
+These commands may be useful during the challenge: kubectl create deployment, kubectl expose deployment, kubectl get svc, kubectl get nodes -o wide.
+The previous Ingress configurations are still available. You can consult them if you're stuck.
+You may need to edit /etc/hosts for name resolution to be successful. echo "A.B.C.D name" >> /etc/hosts is an easy shortcut one can use.
+
+
+
