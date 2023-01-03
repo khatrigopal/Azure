@@ -58,4 +58,5 @@ k get --raw /api/v1/nodes/aks-nodepool1-12420863-vmss000003/proxy/metrics/cadvis
 # Get Ingress IP address programatically
 INGRESS_IP=$(kubectl get ingress basic-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-
+# Openssl Generate a CSR + Key
+openssl req -new -newkey rsa:2048 -nodes -keyout netest.cloud.key -out netest.cloud.csr
