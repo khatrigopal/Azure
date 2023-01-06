@@ -60,3 +60,6 @@ INGRESS_IP=$(kubectl get ingress basic-ingress -o jsonpath='{.status.loadBalance
 
 # Openssl Generate a CSR + Key
 openssl req -new -newkey rsa:2048 -nodes -keyout netest.cloud.key -out netest.cloud.csr
+
+# While loop
+while true; do curl 20.23.196.8; sleep 0.1; echo ""; done
