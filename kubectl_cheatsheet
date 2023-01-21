@@ -1,0 +1,1 @@
+kubectl get node aks-nodepool1-33475044-vmss000000 -o wide | awk '{print $6}' | tail -n +2
