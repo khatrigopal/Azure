@@ -1,0 +1,84 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default
+  namespace: tenant-a
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - {}
+  egress:
+    - toEndpoints:
+        - {}
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+
+
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: extra
+  namespace: tenant-a
+spec:
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:app: backend-service
+            k8s:io.cilium.k8s.namespace.labels.kubernetes.io/metadata.name: tenant-b
+            k8s:io.kubernetes.pod.namespace: tenant-b
+      toPorts:
+        - ports:
+            - port: "80"
+    - toFQDNs:
+        - matchName: api.twitter.com
+      toPorts:
+        - ports:
+            - port: "80"
+
+
+
+
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-exam
+  namespace: tenant-b
+spec:
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+    - toEndpoints:
+        - matchLabels:
+            k8s:app: backend-service
+            k8s:io.cilium.k8s.namespace.labels.kubernetes.io/metadata.name: tenant-c
+            k8s:io.kubernetes.pod.namespace: tenant-c
+      toPorts:
+        - ports:
+            - port: "80"
+    - toFQDNs:
+        - matchName: google.com
+      toPorts:
+        - ports:
+            - port: "443"
