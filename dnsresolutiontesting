@@ -1,0 +1,29 @@
+while true
+do DATE=`date` ResolvedIP=`nslookup lpart001.atradiusnet.com | grep answer -A5 | grep "^Address" | cut -d":" -f2 | awk '{print $1}' | sort -u` if [ "$ResolvedIP" != "10.20.135.45" ]; then echo $DATE >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; nslookup lpart001.atradiusnet.com >> /tmp/dnscollection.txt; fi  sleep 10  done
+
+
+[2:45 PM] Othman AlJundi
+if [ "$ResolvedIP" != "10.20.135.45" ]; then echo $DATE >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; nslookup lpart001.atradiusnet.com >> /tmp/dnscollection.txt; fi
+
+[2:48 PM] Othman AlJundi
+DATE=`date` ResolvedIP=`nslookup lpart001.atradiusnet.com | grep answer -A5 | grep "^Address" | cut -d":" -f2 | awk '{print $1}' | sort -u`
+
+[2:49 PM] Othman AlJundi
+DATE=`date`
+
+[2:51 PM] Othman AlJundi
+
+touch /tmp/dnscollection.txt ;
+while true
+do DATE=`date` ResolvedIP=`nslookup lpart001.atradiusnet.com | grep answer -A5 | grep "^Address" | cut -d":" -f2 | awk '{print $1}' | sort -u` if [ "$ResolvedIP" != "10.20.135.45" ]; then echo $DATE >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; echo XXXXXXXXXXXXXXXXXXXX >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; nslookup lpart001.atradiusnet.com >> /tmp/dnscollection.txt; fi sleep 10 done 
+
+[2:52 PM] Othman AlJundi
+
+#!/bin/bash touch /tmp/dnscollection.txt ; while true
+do DATE=`date` ResolvedIP=`nslookup lpart001.atradiusnet.com | grep answer -A5 | grep "^Address" | cut -d":" -f2 | awk '{print $1}' | sort -u` if [ "$ResolvedIP" != "10.20.135.45" ]; then echo $DATE >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; echo XXXXXXXXXXXXXXXXXXXX >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; nslookup lpart001.atradiusnet.com >> /tmp/dnscollection.txt; fi sleep 10 done 
+
+[2:53 PM] Othman AlJundi
+>  /tmp/dnscollection.txt
+
+#!/bin/bashtouch /tmp/dnscollection.txt ;
+while truedoDATE=`date`ResolvedIP=`nslookup lpart001.atradiusnet.com | grep answer -A5 | grep "^Address" | cut -d":" -f2 | awk '{print $1}' | sort -u`if [ "$ResolvedIP" != "10.20.135.45" ]; then echo $DATE >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; echo XXXXXXXXXXXXXXXXXXXX >> /tmp/dnscollection.txt; echo  >> /tmp/dnscollection.txt; nslookup lpart001.atradiusnet.com >> /tmp/dnscollection.txt; fisleep 10done
