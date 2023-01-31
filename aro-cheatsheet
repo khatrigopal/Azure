@@ -1,0 +1,1 @@
+apiVersion: v1kind: Servicemetadata:  annotations:    service.beta.kubernetes.io/azure-load-balancer-resource-group <ResourceGroup>  name: azure-load-balancerspec:  loadBalancerIP: <PublicIPThatYouCreated>  type: LoadBalancer  ports:  - port: 80  selector:    app: azure-load-balancer
