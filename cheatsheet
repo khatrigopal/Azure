@@ -65,3 +65,5 @@ openssl req -new -newkey rsa:2048 -nodes -keyout netest.cloud.key -out netest.cl
 while true; do curl 20.23.196.8; sleep 0.1; echo ""; done
 
 az vmss run-command invoke --resource-group MC_USEDFADSAARSG11_USEDFADSAAAKS03_eastus --name aks-agentpool-42184020-vmss --command-id RunShellScript --instance-id 0 --scripts 'nc -v -w 2 //10.1.0.21 10250' --output tsv --query 'value[0].message'
+
+node.kubernetes.io/exclude-from-external-load-balancers=true
