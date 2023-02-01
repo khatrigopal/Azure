@@ -2,3 +2,4 @@ apiVersion: v1kind: Servicemetadata:  annotations:    service.beta.kubernete
 
 
 oc get pdb -A | awk ' where $5=="0" {print $0}' | awk '{print $1,$2}' | sed 's/^/oc patch pdb -n /g' | sed "s/$/ --type=merge -p '{\"spec\":{\"minAvailable\":0}}'/g"
+for i in `oc get nodes -l node-role.kubernetes.io/worker | sed '1d' | awk '{print $1}'`; do echo oc adm drain $i; echo oc adm cordon $i --ignore-daemonsets --delete-emptydir-data; echo oc delete machine $i -n openshift-machine-api ; echo oc get nodes ; done
