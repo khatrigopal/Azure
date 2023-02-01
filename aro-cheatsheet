@@ -1,1 +1,4 @@
 apiVersion: v1kind: Servicemetadata:  annotations:    service.beta.kubernetes.io/azure-load-balancer-resource-group <ResourceGroup>  name: azure-load-balancerspec:  loadBalancerIP: <PublicIPThatYouCreated>  type: LoadBalancer  ports:  - port: 80  selector:    app: azure-load-balancer
+
+
+oc get pdb -A | awk ' where $5=="0" {print $0}' | awk '{print $1,$2}' | sed 's/^/oc patch pdb -n /g' | sed "s/$/ --type=merge -p '{\"spec\":{\"minAvailable\":0}}'/g"
