@@ -6,3 +6,5 @@ for i in `oc get nodes -l node-role.kubernetes.io/worker | sed '1d' | awk '{prin
 
 # DNS 
 for p in $(oc -n openshift-dns get pods -o custom-columns=':.metadata.name' --no-headers | grep dns-default); do echo -n "$p: "; oc -n openshift-dns exec $p -c dns -- md5sum /etc/coredns/Corefile; done
+# Troubleshooting DNS Resolution in Openshift
+https://access.redhat.com/solutions/3804501
