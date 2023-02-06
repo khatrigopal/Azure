@@ -68,10 +68,12 @@ az vmss run-command invoke --resource-group MC_USEDFADSAARSG11_USEDFADSAAAKS03_e
 
 node.kubernetes.io/exclude-from-external-load-balancers=true
 
+# Run commands on VMSS
 az vmss run-command invoke -g MC_AKS_AKS_WESTEUROPE -n aks-nodepool1-33475044-vmss --command-id RunShellScript --instance-id 0 --query 'value[0].message' -otsv --scripts  "openssl x509 -in /etc/kubernetes/certs/apiserver.crt -text -noout | grep -A6 Vali"
 az vmss run-command invoke --resource-group "MC_AKS_AKS_WESTEUROPE" --name "aks-nodepool1-33475044-vmss" --command-id RunShellScript --instan
 ce-id 0 --scripts "openssl x509 -in /etc/kubernetes/certs/apiserver.crt -noout " -enddate" --query "values[0].message
 
+# Run commands on VMAS
 az vm run-command invoke -g MC_RG- -n aks-prodal-39145615-1 --scripts "hostname && date && curl -k -v https://mcr.microsoft.com/v2/" --command-id RunShellScript
 az vm run-command invoke -g MC_RG- -n aks-prodagtpool-39145615-1 --scripts "hostname && date && curl -k -v aks-eu-uksouth-prod-d2c-c208dc99.hcp.uksouth.azmk8s.io"  --command-id RunShellScript
 
