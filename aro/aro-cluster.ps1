@@ -1,5 +1,6 @@
 # For CLI Token please uncomment the #43 line. You need to have already installer the oc binary file. 
-# 
+# https://www.ibm.com/links?url=https%3A%2F%2Fcloud.redhat.com%2Fopenshift%2Finstall%2Fpull-secret
+# https://cloud.redhat.com/openshift/install/pull-secret
 $RG = "aro"
 $CLUSTER = "arodemo"
 $LOC = "westeurope"
