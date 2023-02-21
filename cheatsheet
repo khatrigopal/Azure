@@ -77,3 +77,5 @@ ce-id 0 --scripts "openssl x509 -in /etc/kubernetes/certs/apiserver.crt -noout "
 az vm run-command invoke -g MC_RG- -n aks-prodal-39145615-1 --scripts "hostname && date && curl -k -v https://mcr.microsoft.com/v2/" --command-id RunShellScript
 az vm run-command invoke -g MC_RG- -n aks-prodagtpool-39145615-1 --scripts "hostname && date && curl -k -v aks-eu-uksouth-prod-d2c-c208dc99.hcp.uksouth.azmk8s.io"  --command-id RunShellScript
 
+# Change the core dumps location
+sysctl -w kernel.core_pattern=/dev/null
