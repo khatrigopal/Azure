@@ -4,6 +4,9 @@ cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 kubectl annotate node kubectl annotate node aks-nodepool1-79955018-vmss000002 cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 
 
+# Change line ending from Windows to Linux in VIM
+:set ff=unix
+
 # Getting metrics cdvisor
 kubectl get --raw /api/v1/nodes/<NODE_NAME>/proxy/metrics/cadvisor
 
