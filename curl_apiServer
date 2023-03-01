@@ -1,0 +1,10 @@
+kubectl create serviceaccount jenkins
+
+kubectl create token jenkins > ./token
+
+ k create clusterrole jenkins --verb=* --resource=*
+ 
+  k create clusterrolebinding jenkins --clusterrole=jenkins --serviceaccount=default:jenkins
+  
+  TOKEN=$(cat ./token)
+  curl -sS -m 10 --cacert ./ca.crt --header "Authorization: Bearer ${TOKEN}" -X GET https://aks-aks-aa1792-86cbe097.hcp.westeurope.azmk8s.io:443/api/v1/namespaces/default/pods/jenkins/status
