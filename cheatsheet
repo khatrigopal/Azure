@@ -84,3 +84,14 @@ az vm run-command invoke -g MC_RG- -n aks-prodagtpool-39145615-1 --scripts "host
 
 # Change the core dumps location
 sysctl -w kernel.core_pattern=/dev/null
+
+
+
+# Get the certificate of cluster
+kubectl config view --raw -o jsonpath="{.users[?(@.name == 'clusterUser_aks_aks')].user.client-certificate-data}" | base64 -d | openssl x509 -text
+
+# Get the key from kubconfig
+kubectl config view --raw -o jsonpath="{.users[?(@.name == 'clusterUser_aks_aks')].user.client-key-data}" | base64 -d
+
+# Create pfx file from crt and key
+openssl pkcs12 -export -out aks.pfx -inkey ca.key -in ca.crt
