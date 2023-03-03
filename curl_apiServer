@@ -1,6 +1,22 @@
+### Secret
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+ name: jenkins
+ annotations:
+   kubernetes.io/service-account.name: jenkins
+EOF
+
+###
+
+kubectl get secrets jenkins -o jsonpath='{.data.token}' | base64 -d
+
+
 kubectl create serviceaccount jenkins
 
-kubectl create token jenkins > ./token
+kubectl create token jenkins --duration 9999h> ./token
 
  k create clusterrole jenkins --verb=* --resource=*
  
