@@ -24,3 +24,15 @@ kubectl create token jenkins --duration 9999h> ./token
   
   TOKEN=$(cat ./token)
   curl -sS -m 10 --cacert ./ca.crt --header "Authorization: Bearer ${TOKEN}" -X GET https://aks-aks-aa1792-86cbe097.hcp.westeurope.azmk8s.io:443/api/v1/namespaces/default/pods/jenkins/status
+# Get the certificate of cluster
+
+
+# Generating a PFX File for connecting to APIServer from external destination (Eg. Logic Apps)
+
+kubectl config view --raw -o jsonpath="{.users[?(@.name == 'clusterUser_aks_aks')].user.client-certificate-data}" | base64 -d | openssl x509 -text
+
+# Get the key from kubconfig
+kubectl config view --raw -o jsonpath="{.users[?(@.name == 'clusterUser_aks_aks')].user.client-key-data}" | base64 -d
+
+# Create pfx file from crt and key
+openssl pkcs12 -export -out aks.pfx -inkey ca.key -in ca.crt
