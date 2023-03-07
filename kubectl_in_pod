@@ -1,0 +1,62 @@
+@Credits to Ioan Corcodel
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: kube-system
+  name: get-ama-logs-agent-logs-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"] 
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: kube-system
+  name: get-ama-logs-agent-logs-role-bind
+subjects:
+- kind: ServiceAccount
+  name: get-ama-logs-agent-logs-svc
+  namespace: kube-system
+roleRef:
+  kind: Role
+  name: get-ama-logs-agent-logs-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: kube-system
+  name: get-ama-logs-agent-logs-svc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: kube-system
+  name: get-ama-logs-agent-logs
+spec:
+  selector:
+    matchLabels:
+      app: get-ama-logs-agent-logs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: get-ama-logs-agent-logs
+    spec:
+      serviceAccountName: get-ama-logs-agent-logs-svc
+      containers:
+      - name: get-ama-logs-agent-logs
+        image: bitnami/kubectl:1.25.6
+        command: ["/bin/sh"]
+        args: ["-c","while true; do for i in `kubectl get pods -n kube-system -l=component=ama-logs-agent -o=custom-columns='Name:metadata.name' --no-headers`; do echo '' ; echo \"[$(date +\"%F %T %Z\" --utc)] --- $i : ama-logs ---\" ; kubectl exec -n kube-system $i -c ama-logs -- tail -n 25 /var/opt/microsoft/docker-cimprov/log/fluent-bit.log ; echo '' ; echo \"[$(date +\"%F %T %Z\" --utc)] --- $i : ama-logs-prometheus ---\" ; kubectl exec -n kube-system $i -c ama-logs-prometheus -- tail -n 25 /var/opt/microsoft/docker-cimprov/log/fluent-bit.log ; done ; sleep 10 ; done"]
+        resources:
+          limits:
+            memory: 128Mi
+            cpu: 500m
+---
