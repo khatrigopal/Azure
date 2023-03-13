@@ -98,3 +98,6 @@ openssl pkcs12 -export -out aks.pfx -inkey ca.key -in ca.crt
 
 # Get etcd size
 kubectl get --raw /metrics | grep etcd_db_total_size_in_bytes
+
+# CoreDNS port reuse
+https://github.com/kubernetes/kubernetes/issues/76517#issuecomment-490731578
