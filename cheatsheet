@@ -101,3 +101,6 @@ kubectl get --raw /metrics | grep etcd_db_total_size_in_bytes
 
 # CoreDNS port reuse
 https://github.com/kubernetes/kubernetes/issues/76517#issuecomment-490731578
+
+# NodeLocal DNS
+https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/#configuration
