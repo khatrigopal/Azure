@@ -1,3 +1,9 @@
+# https://unix.stackexchange.com/questions/342663/how-is-unattended-upgrades-started-and-how-can-i-modify-its-schedule
+# https://github.com/Azure/acs-engine/issues/4115
+# http://vijayshinva.github.io/azure/2018/11/20/stopping-unattended-upgrades-in-azure-ubuntu-vmss.html
+
+
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
