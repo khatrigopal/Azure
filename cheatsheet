@@ -104,3 +104,5 @@ https://github.com/kubernetes/kubernetes/issues/76517#issuecomment-490731578
 
 # NodeLocal DNS
 https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/#configuration
+
+# Get IMDS Identity
