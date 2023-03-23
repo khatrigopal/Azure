@@ -118,3 +118,7 @@ echo The managed identities for Azure resources access token is $access_token
 
 # Getting metric for etcd database
 kubectl get --raw /metrics | grep etcd_db_total_size_in_bytes 
+
+# ACRPoll role assignment
+az role assignment create --assignee 828bfba9-f4ce-44a9-bf4d-e4171d564a19 --scope /subscriptions/ac6361f8-4743-4781-xxxxxx/resourceGroups/IxxI-xxxx-xxx-x01/providers/Microsoft.ContainerRegistry/registries/name --role acrpull
+
