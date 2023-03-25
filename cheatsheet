@@ -125,4 +125,13 @@ az role assignment create --assignee 828bfba9-f4ce-44a9-bf4d-e4171d564a19 --scop
 # Get memory on a Linux
 ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head
 
+# Get cgroup version on the node
+Identify the cgroup version on Linux Nodes
+
+stat -fc %T /sys/fs/cgroup/
+
+For cgroup v2, the output is cgroup2fs.
+
+For cgroup v1, the output is tmpfs.
+
 
