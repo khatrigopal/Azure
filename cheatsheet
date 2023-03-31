@@ -134,4 +134,7 @@ For cgroup v2, the output is cgroup2fs.
 
 For cgroup v1, the output is tmpfs.
 
+# AKS Calico
+https://docs.tigera.io/calico/latest/getting-started/kubernetes/managed-public-cloud/aks
+
 
