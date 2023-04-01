@@ -137,4 +137,7 @@ For cgroup v1, the output is tmpfs.
 # AKS Calico
 https://docs.tigera.io/calico/latest/getting-started/kubernetes/managed-public-cloud/aks
 
+# Schedule a Pod on a Linux/Windows Node
+kubectl run -ti --rm test --image=ubuntu:18.04 --overrides='{"spec": { "nodeSelector": {"kubernetes.io/os": "linux"}}}'
+
 
