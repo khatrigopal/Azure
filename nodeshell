@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: tcpdumps
+  name: tcpdumps
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      component: tcpdumps
+      tier: node
+  template:
+    metadata:
+      labels:
+        component: tcpdumps
+        tier: node
+    spec:
+      #nodeSelector:
+      #  agentpool: default
+      nodeName: aks-agentpool-25840862-vmss000001
+      containers:
+        - command:
+            - nsenter
+            - --target
+            - "1"
+            - --mount
+            - --uts
+            - --ipc
+            - --net
+            - --pid
+            - --
+            - sh
+            - -c
+            - |
+              echo "Running"
+              sleep 600s
+          image: alpine
+          imagePullPolicy: IfNotPresent
+          name: tcpdump
+          volumeMounts:
+          - mountPath: /tmp
+            name: logs
+          resources:
+            requests:
+              cpu: 10m
+          securityContext:
+            privileged: true
+      volumes:
+      - name: logs
+        hostPath:
+          path: /tmp
+          type: Directory
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      restartPolicy: Always
+  updateStrategy:
+    type: OnDelete
