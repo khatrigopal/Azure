@@ -12,3 +12,4 @@ https://access.redhat.com/solutions/3804501
 oc adm inspect namespace/<NameSpace> 
 
 oc get pods -A -o jsonpath="{.items[*].spec.containers[*].image}" | sed 's/ /\n/g' | sort | uniq ; echo ; echo Domains: ; echo ;kubectl get pods -A -o jsonpath="{.items[*].spec.containers[*].image}" | sed 's/ /\n/g' | cut -d "/" -f1 | sort | uniq ; echo
+oc get dns.operator/default -oyaml 
