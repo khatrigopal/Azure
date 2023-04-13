@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# Variables for the Azure AKS cluster and Log Analytics workspace
+clusterrg="akscilium"
+clustername="akscilium"
+workspaceRG="ammanrg"
+workspacename="ammaninternal"
+
+# Get the variables with CLI.
+# if you are running on a node, replace the variables with static entries. 
+workspaceID=$(az aks show -n "$clustername" -g "$clusterrg" --query 'addonProfiles.omsagent.config.logAnalyticsWorkspaceResourceID' -o tsv)
+customerId=$(az monitor log-analytics workspace show --resource-group "$workspaceRG" --workspace-name "$workspacename" --query 'customerId' -o tsv)
+fqdn=$(az aks show -n "$clustername" -g "$clusterrg" --query 'fqdn' -o tsv)
+azurePortalFqdn=$(az aks show -n "$clustername" -g "$clusterrg" --query 'azurePortalFqdn' -o tsv)
+region=$(az aks show -n akscilium -g akscilium --query 'azurePortalFqdn' -o tsv | awk -F'.' '{print $(NF-2)}')
+
+
+# List of endpoints
+endpoints=(
+    "ntp.ubuntu.com:123:udp"
+    "packages.microsoft.com:443:tcp"
+    "azure.archive.ubuntu.com:80:tcp"
+    "security.ubuntu.com:80:tcp"
+    "changelogs.ubuntu.com:80:tcp"
+    "storage.googleapis.com:443:tcp"
+    "charts.helm.sh:443:tcp"
+    "management.azure.com:443:tcp"
+    "login.microsoftonline.com:443:tcp"
+    "dc.services.visualstudio.com:443:tcp"
+    "${customerId}.ods.opinsights.azure.com:443:tcp"
+    "${customerId}.oms.opinsights.azure.com:443:tcp"
+    "mcr.microsoft.com:443:tcp"
+    "acs-mirror.azureedge.net:443:tcp"
+    "changelogs.ubuntu.com:443:tcp"
+    "nvidia.github.io:443:tcp"
+    "us.download.nvidia.com:443:tcp"
+    "download.docker.com:443:tcp"
+    "onegetcdn.azureedge.net:443:tcp"
+    "go.microsoft.com:443:tcp"
+    "www.msftconnecttest.com:443:tcp"
+    "ctldl.windowsupdate.com:443:tcp"
+    "login.microsoftonline.com:443:tcp"
+    "data.policy.core.windows.net:443:tcp"
+    "store.policy.core.windows.net:443:tcp"
+    "dc.services.visualstudio.com:443:tcp"
+    "168.63.129.16:53:udp"
+    "${fqdn}:443:tcp"
+    "${fqdn}:1194:udp"
+    "${fqdn}:9000:udp"
+    "${azurePortalFqdn}:443:tcp"
+    "vault.azure.net:443:tcp"
+    "${region}.dp.kubernetesconfiguration.azure.com"
+    )
+
+# Color codes for output formatting
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+# Initialize the result table with header
+result_table="Endpoint\t\t\tStatus\n"
+
+for endpoint in "${endpoints[@]}"; do
+    host=$(echo "$endpoint" | cut -d: -f1)
+    port=$(echo "$endpoint" | cut -d: -f2)
+    protocol=$(echo "$endpoint" | cut -d: -f3)
+    timeout=5
+
+    # Check if the endpoint is reachable using the specified protocol (TCP or UDP) with a timeout
+    if [ "$protocol" == "tcp" ]; then
+        result=$(nc -z -w $timeout "$host" "$port" 2>&1)
+    elif [ "$protocol" == "udp" ]; then
+        result=$(timeout $timeout bash -c "</dev/udp/$host/$port" 2>&1)
+    else
+        result="${RED}Invalid protocol specified for endpoint $endpoint${NC}"
+    fi
+
+    # Evaluate the result and add it to the result table
+    if [ $? -eq 0 ]; then
+        result_table+="$host:$port\t\t${GREEN}allowed${NC}\n"
+    else
+        result_table+="$host:$port\t\t${RED}$result${NC}\n"
+    fi
+done
+
+# Print the result table using the `column` command
+echo -e "$result_table" | column -t -s $'\t'
