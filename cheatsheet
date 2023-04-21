@@ -145,3 +145,10 @@ https://docs.tigera.io/calico/latest/getting-started/kubernetes/managed-public-c
 kubectl run -ti --rm test --image=ubuntu:18.04 --overrides='{"spec": { "nodeSelector": {"kubernetes.io/os": "linux"}}}'
 
 
+tcpdump -ni eth0 -w /tmp/$(hostname)-ethcap-%Y-%m-%d-TIME-%H-%M.pcap -e -C 300 -G 1800 -K -W 10
+
+
+openssl s_client -showcerts -connect <your-sql-server-name>:443
+openssl s_client -showcerts -connect <your-sql-server-name>:443
+openssl s_client -connect sql-liferay-fanid-dev-we-001.database.windows.net:443 -tls1_2
+
