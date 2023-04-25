@@ -152,3 +152,5 @@ openssl s_client -showcerts -connect <your-sql-server-name>:443
 openssl s_client -showcerts -connect <your-sql-server-name>:443
 openssl s_client -connect sql-liferay-fanid-dev-we-001.database.windows.net:443 -tls1_2
 
+curl -v --insecure --proxy-insecure https://mcr.microsoft.com/v2/
+
