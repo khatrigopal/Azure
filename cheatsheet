@@ -154,3 +154,5 @@ openssl s_client -connect sql-liferay-fanid-dev-we-001.database.windows.net:443 
 
 curl -v --insecure --proxy-insecure https://mcr.microsoft.com/v2/
 
+service.beta.kubernetes.io/azure-load-balancer-tcp-idle-timeout: “value”
+
