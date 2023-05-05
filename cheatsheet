@@ -156,3 +156,4 @@ curl -v --insecure --proxy-insecure https://mcr.microsoft.com/v2/
 
 service.beta.kubernetes.io/azure-load-balancer-tcp-idle-timeout: “value”
 
+kubectl debug {problem_pod} --image mcr.microsoft.com/cbl-mariner/base/core:2.0 -- sh -c 'tdnf install -q -y mariner-repos-extended ; tdnf install -q -y tcpdump wireshark-cli ; tcpdump -U -i eth0 -s 256 -w - | tshark -r -'
