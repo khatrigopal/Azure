@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: privileged-daemonset
+  namespace: kube-system
+  labels:
+    app: privileged-daemonset
+spec:
+  selector:
+    matchLabels:
+      app: privileged-daemonset
+  template:
+    metadata:
+      labels:
+        app: privileged-daemonset
+    spec:
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+        - name: powershell
+          image: mcr.microsoft.com/powershell:latest
+          securityContext:
+            privileged: true
+            windowsOptions:
+              hostProcess: true
+              runAsUserName: "NT AUTHORITY\\SYSTEM"
+          command:
+            - powershell.exe
+            - -command
+            - |
+              if ((Get-WindowsFeature -Name Windows-Defender).installed -eq $true) {Write-Host "Windows Defender Found - uninstall will proceed" ; Uninstall-WindowsFeature -Name Windows-Defender; Restart-Computer -Force} else {while ($true) { Write-Host "Windows Defender Feature not Found"; Start-Sleep -Seconds 2147483 }}
+      hostNetwork: true
+      terminationGracePeriodSeconds: 0
