@@ -1,0 +1,5 @@
+https://console.redhat.com/openshift/create/local
+https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.18/html/getting_started_guide/installation_gsg#minimum-system-requirements-hardware_gsg
+
+crc config set preset microshift
+https://crc.dev/blog/posts/2023-04-05-microshift-on-crc/
