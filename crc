@@ -10,4 +10,4 @@ wget https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/
 tar xvf ./crc-linux-amd64.tar.xz
 
 sudo dnf install NetworkManager && sudo dns install libvirt
-
+lvextend -r -L 6G /dev/mapper/rootvg-homelv
