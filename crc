@@ -3,3 +3,11 @@ https://access.redhat.com/documentation/en-us/red_hat_openshift_local/2.18/html/
 
 crc config set preset microshift
 https://crc.dev/blog/posts/2023-04-05-microshift-on-crc/
+
+wget https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/crc/latest/crc-windows-installer.zip
+wget https://developers.redhat.com/content-gateway/rest/mirror/pub/openshift-v4/clients/crc/latest/crc-linux-amd64.tar.xz
+
+tar xvf ./crc-linux-amd64.tar.xz
+
+sudo dnf install NetworkManager && sudo dns install libvirt
+
