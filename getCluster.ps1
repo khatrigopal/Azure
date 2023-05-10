@@ -14,3 +14,22 @@ foreach ($aksCluster in $aksClusters) {
         }
     }
 }
+
+
+---
+
+# Get the list of AKS clusters
+$aksClusters = Get-AzAksCluster
+
+# Loop through each AKS cluster and get the node pool and node names
+foreach ($aksCluster in $aksClusters) {
+    $aksClusterName = $aksCluster.Name
+    $aksResourceGroup = $aksCluster.ResourceGroupName
+    write-output "AKS Clusters: $aksClusterName"
+    $aksNodepool = Get-AzAksNodepool -ResourceGroupName $aksResourceGroup -ClusterName $aksClusterName
+    
+   foreach ( $item in $aksNodepool)
+   {
+    Write-Output "AKS NodePools: $item. Name"
+   }
+}
