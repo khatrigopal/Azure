@@ -1,0 +1,4 @@
+
+# AKS Upgrades logs in Azure Monitor
+az monitor activity-log list --namespace Microsoft.ContainerService  --offset 24h -g testcluster -o table
+az monitor activity-log list --namespace Microsoft.ContainerService  --offset 36h -g testcluster -o json | jq ".[] | {eventTimestamp, operationName}"
