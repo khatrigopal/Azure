@@ -160,3 +160,5 @@ kubectl debug {problem_pod} --image mcr.microsoft.com/cbl-mariner/base/core:2.0 
 
 az network vnet list -g MC_aks_aks_westeurope --query "[].[name]" -o tsv
 z network vnet list -g MC_calico_akscalico_westeurope --query "[].dhcpOptions.dnsServers" -o tsv
+
+for i in {1..19}; do echo -n "$i: "; dig +time=1 eastus2qakv.vault.azure.net | grep -e "IN A" -e "connection timed"; done
