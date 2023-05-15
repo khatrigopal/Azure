@@ -170,3 +170,5 @@ Also you can filter for kubelet
 
 kubectl get --raw "/api/v1/nodes/aks-agentpool-18220771-vmss000000/proxy/logs/messages" |grep kubelet
 
+kubectl get --raw "/api/v1/nodes/aks-agentpool-33673860-vmss000000/proxy/logs/azure/cluster-provision.log"
+
