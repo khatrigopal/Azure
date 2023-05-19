@@ -172,3 +172,6 @@ kubectl get --raw "/api/v1/nodes/aks-agentpool-18220771-vmss000000/proxy/logs/me
 
 kubectl get --raw "/api/v1/nodes/aks-agentpool-33673860-vmss000000/proxy/logs/azure/cluster-provision.log"
 
+
+# Delete bulk evicted Pods
+kubectl get pod -n foxutech | grep Evicted | awk '{print $1}' | xargs kubectl delete pod -n foxutech
