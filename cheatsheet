@@ -175,3 +175,8 @@ kubectl get --raw "/api/v1/nodes/aks-agentpool-33673860-vmss000000/proxy/logs/az
 
 # Delete bulk evicted Pods
 kubectl get pod -n foxutech | grep Evicted | awk '{print $1}' | xargs kubectl delete pod -n foxutech
+
+# Generate SSL signed certificat
+# openssl req  -new  -newkey rsa:2048  -nodes  -keyout localhost.key  -out localhost.csr
+# openssl  x509  -req  -days 365  -in localhost.csr  -signkey localhost.key  -out localhost.crt
+
