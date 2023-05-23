@@ -16,3 +16,25 @@ oc get dns.operator/default -oyaml 
 
 
     echo ; oc get secret azure-credentials -n kube-system --template='{{range $k, $v := .data }} {{ $k }} {{ " : " }} {{ $v | base64decode }} {{ "\n" }} {{ end }}' ; echo
+    
+    
+    
+    # To Clone existing MachineSet Configurations into a new one (NewName) :
+
+ 
+
+
+oc get machinesets -n openshift-machine-api
+
+ 
+
+oc get machineset -n openshift-machine-api XXXXXXXX -ojson | jq 'del(.status, .metadata.annotations, .metadata.creationTimestamp, .metadata.generation, .metadata.resourceVersion, .metadata.uid)' | jq '.metadata.name = "NewName"' | jq '.spec.selector.matchLabels."machine.openshift.io/cluster-api-machineset" = "NewName"' | jq '.spec.template.metadata.labels."machine.openshift.io/cluster-api-machineset" = "NewName"' > NewMachineSet.json
+
+ 
+
+
+cat NewMachineSet.json
+
+ 
+
+oc apply -f NewMachineSet.json
