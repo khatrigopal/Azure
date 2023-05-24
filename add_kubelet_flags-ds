@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kubeletchange
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      kubernetes.io/os: linux
+      app: kubeletchange
+  template:
+    metadata:
+       labels:
+          kubernetes.io/os: linux
+          app: kubeletchange
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+      - image:  mcr.microsoft.com/oss/nginx/nginx:1.13.12-alpine
+        imagePullPolicy: IfNotPresent
+        name: kubeletchange
+        resources: {}
+        volumeMounts:
+        - mountPath: /host
+          name: host-root
+        command: ["/bin/sh", "-c"]
+        args:
+          - chroot /host /bin/bash -c "sed -i '/KUBELET_FLAGS/s/$/--cpu-manager-policy=static --topology-manager-policy=best-effort/' /etc/default/kubelet ; rm /var/lib/kubelet/cpu_manager_state ; service kubelet restart ; sleep infinity"
+        securityContext:
+          privileged: true
+      hostIPC: true
+      hostNetwork: true
+      hostPID: true
+      preemptionPolicy: PreemptLowerPriority
+      priority: 0
+      volumes:
+      - hostPath:
+          path: /
+          type: ""
+        name: host-root
