@@ -180,3 +180,7 @@ kubectl get pod -n foxutech | grep Evicted | awk '{print $1}' | xargs kubectl de
 # openssl req  -new  -newkey rsa:2048  -nodes  -keyout localhost.key  -out localhost.csr
 # openssl  x509  -req  -days 365  -in localhost.csr  -signkey localhost.key  -out localhost.crt
 
+SERVICE_IP=$(kubectl get services nginx-ipv6 -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -s http://[${SERVICE_IP}] | head -n5
+
+
