@@ -1,0 +1,120 @@
+# 1. Create Managed Identity
+az identity create -g $AKS_RG -n $IDENTITY_NAME
+
+# 2. Assign RBAC role
+$IDENTITY_CLIENT_ID=$(az identity show -g $AKS_RG -n $IDENTITY_NAME --query "clientId" -o tsv)
+$STORAGE_ACCOUNT_ID=$(az storage account show -n $STORAGE_ACCOUNT_NAME --query id)
+
+az role assignment create --assignee $IDENTITY_CLIENT_ID `
+        --role "Storage Blob Data Owner" `
+        --scope $STORAGE_ACCOUNT_ID
+
+# 3. Attach Managed Identity to AKS VMSS (System nodepool recommended)        
+$IDENTITY_ID=$(az identity show -g $AKS_RG -n $IDENTITY_NAME --query "id" -o tsv)
+$NODE_RG=$(az aks show -g $AKS_RG -n $AKS_NAME --query nodeResourceGroup -o tsv)
+#
+$VMSS_NAME_0=$(az vmss list -g $NODE_RG --query [0].name -o tsv)
+az vmss identity assign -g $NODE_RG -n $VMSS_NAME_0 --identities $IDENTITY_ID
+$VMSS_NAME_1=$(az vmss list -g $NODE_RG --query [1].name -o tsv)
+az vmss identity assign -g $NODE_RG -n $VMSS_NAME_1 --identities $IDENTITY_ID
+
+# 4. Configure Persistent Volume (PV) with managed identity
+# Run below which creates pv-blobfuse.yaml
+@"
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-blob
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: azureblob-fuse-premium
+  mountOptions:
+    - -o allow_other
+    - --file-cache-timeout-in-seconds=120
+  csi:
+    driver: blob.csi.azure.com
+    readOnly: false
+    volumeHandle: $STORAGE_ACCOUNT_NAME-$CONTAINER_NAME
+    volumeAttributes:
+      resourceGroup: $AKS_RG
+      storageAccount: $STORAGE_ACCOUNT_NAME
+      containerName: $CONTAINER_NAME
+      # refer to https://github.com/Azure/azure-storage-fuse#environment-variables
+      AzureStorageAuthType: msi  # key, sas, msi, spn
+      AzureStorageIdentityResourceID: $IDENTITY_ID
+"@ > pv-blobfuse.yaml
+
+pvc-blobfuse.yaml
+=================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-blob
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: pv-blob
+  storageClassName: azureblob-fuse-premium
+
+# 5. Deploy the application
+kubectl apply -f pv-blobfuse.yaml -f pvc-blobfuse.yaml -f nginx-pod-blob.yaml
+clear; kubectl get pods,svc,pvc,pv
+
+
+# 6. Verify the Blob storage mounted successfully
+$POD_NAME=$(kubectl get pods -l app=nginx-app -o jsonpath='{.items[0].metadata.name}')
+kubectl exec -it $POD_NAME -- df -h
+
+
+nginx-pod-blob.yaml
+===================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx-app
+  name: nginx-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-app
+  template:
+    metadata:
+      labels:
+        app: nginx-app
+    spec:
+      containers:
+      - image: mcr.microsoft.com/oss/nginx/nginx:1.19.5
+        name: webapp
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+        volumeMounts:
+          - name: pvc-blob
+            mountPath: /usr/share/nginx/html
+      volumes: 
+        - name: pvc-blob
+          persistentVolumeClaim: 
+            claimName:  pvc-blob
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-app
+  labels:
+    run: nginx-app
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    app: nginx-app
+  type: LoadBalancer
