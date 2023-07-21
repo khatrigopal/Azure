@@ -228,3 +228,13 @@ kubectl run debug-node --restart=Never -it --rm --image overriden --overrides '{
 # for older Ubuntu nodes - 18.04
 kubectl run debug-node-aks-agentpool-21180280-vmss000000 --restart=Never -it --rm --image overriden --overrides '{"spec": {"hostPID": true,"hostNetwork": true, "nodeSelector": { "kubernetes.io/hostname": "aks-agentpool-21180280-vmss000000"}, "tolerations": [{"operator": "Exists"}],"containers": [{"name": "nsenter", "image": "mcr.microsoft.com/oss/nginx/nginx:1.21.6","command": ["nsenter", "-m", "-u", "-i", "-n", "-p", "-C", "-r", "-w", "--target=1", "--", "su", "-"], "stdin": true, "tty": true, "securityContext": { "privileged": true }}] } }'
 
+# TCPDump Sidecar container
+spec:
+  template:
+    spec:
+      containers:
+      - name: tcpdump
+        image: docker.io/corfr/tcpdump
+        args: ["-C", "100", "-W", "20", "-v", "-w", "/data/dump" ]
+
+kubectl patch deployment <deploymentName> --patch-file patch.yaml
