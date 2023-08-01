@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: sysctl-patch
+  name: sysctl-patch
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: sysctl-patch
+      tier: node
+  template:
+    metadata:
+      labels:
+        component: sysctl-patch
+        tier: node
+    spec:
+      containers:
+      - command:
+        - nsenter
+        - --target
+        - "1"
+        - --mount
+        - --uts
+        - --ipc
+        - --net
+        - --pid
+        - --
+        - sh
+        - -c
+        - |
+          sysctl -w net.netfilter.nf_conntrack_tcp_be_liberal=1
+          echo nf_conntrack > /etc/modules-load.d/modules.conf
+          echo net.netfilter.nf_conntrack_tcp_be_liberal=1 > /etc/sysctl.d/15-customer.conf
+          while true; do sleep 100000; done
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        name: sysctl-patch
+        resources:
+          requests:
+            cpu: 10m
+        securityContext:
+          privileged: true
+      dnsPolicy: ClusterFirst
+      hostPID: true
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      restartPolicy: Always
+  updateStrategy:
+    type: OnDelete
