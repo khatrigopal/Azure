@@ -238,3 +238,5 @@ spec:
         args: ["-C", "100", "-W", "20", "-v", "-w", "/data/dump" ]
 
 kubectl patch deployment <deploymentName> --patch-file patch.yaml
+
+az aks check-acr -g $rgname -n $clustername --acr RegistryHere --node-name NodeNameHere
