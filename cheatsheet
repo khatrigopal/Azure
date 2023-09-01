@@ -246,3 +246,5 @@ for i in {1..50}; do echo -n "$( date --utc +"%FT-%H:%M:%S.%N") - " ; curl -o /d
 # Get deprecated API
 kubectl get --raw /metrics | grep apiserver_requested_deprecated_apis
 
+# Get the inotify process max
+   for foo in /proc/*/fd/*; do readlink -f $foo; done | grep inotify | sort | uniq -c | sort -nr
