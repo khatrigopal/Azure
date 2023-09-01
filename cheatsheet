@@ -242,3 +242,7 @@ kubectl patch deployment <deploymentName> --patch-file patch.yaml
 az aks check-acr -g $rgname -n $clustername --acr RegistryHere --node-name NodeNameHere
 
 for i in {1..50}; do echo -n "$( date --utc +"%FT-%H:%M:%S.%N") - " ; curl -o /dev/null -s -q -k --connect-timeout 5 URL ; echo $? ; sleep 1 ; done
+
+# Get deprecated API
+kubectl get --raw /metrics | grep apiserver_requested_deprecated_apis
+
