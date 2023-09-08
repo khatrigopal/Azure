@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: sysctl-daemonset
+spec:
+  template:
+    spec:
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - name: sysctl 
+        image: busybox
+        securityContext:
+          capabilities:
+            add: ["CAP_SYS_RESOURCE"] 
+        command:  
+        - /bin/sh
+        - -c
+        - sysctl -w vm.max_map_count=262144
+        volumeMounts:
+        - mountPath: /proc
+          name: proc
+          readOnly: false  
+        - mountPath: /sys  
+          name: sys
+          readOnly: false
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
