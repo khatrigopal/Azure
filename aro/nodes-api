@@ -1,0 +1,47 @@
+#!/bin/bash
+
+STARTDAY="2023-09-12"
+STARTTIME="08:00:00"
+ENDDAY="2023-09-12"
+ENDTIME="11:00:00"
+
+for i in `oc get nodes -l node-role.kubernetes.io/master= -o custom-columns=NAME:.metadata.name --no-headers`
+do
+
+echo
+echo
+cat debug-commands.txt | sed "s/NODEXXX/$i/g" | sed "s/STARTDAY/$STARTDAY/g" | sed "s/STARTTIME/$STARTTIME/g" | sed "s/ENDDAY/$ENDDAY/g" | sed "s/ENDTIME/$ENDTIME/g"
+echo
+echo
+
+done
+
+
+----------------------------
+
+
+
+  
+Commands for node NODEXXX :
+
+
+Count by Request URI within the time range for audit file within time range as well :
+
+        oc debug node/NODEXXX -- chroot /host sh -c "find /var/log/kube-apiserver/ -type f -newermt 'STARTDAY STARTTIME' ! -newermt 'ENDDAY ENDTIME' -name 'audit*.log' | xargs cat | jq 'select(.requestReceivedTimestamp >= \"STARTDAYTSTARTTIME.000000Z\" and .requestReceivedTimestamp <= \"ENDDAYTENDTIME.000000Z\") | .requestURI' | sort | uniq -c | sort -n"
+
+
+Count by Verb within the time range for audit file within time range as well :
+
+        oc debug node/NODEXXX -- chroot /host sh -c "find /var/log/kube-apiserver/ -type f -newermt 'STARTDAY STARTTIME' ! -newermt 'ENDDAY ENDTIME' -name 'audit*.log' | xargs cat | jq 'select(.requestReceivedTimestamp >= \"STARTDAYTSTARTTIME.000000Z\" and .requestReceivedTimestamp <= \"ENDDAYTENDTIME.000000Z\") | .verb' | sort | uniq -c | sort -n"
+
+
+Count by User within the time range for audit file within time range as well :
+
+        oc debug node/NODEXXX -- chroot /host sh -c "find /var/log/kube-apiserver/ -type f -newermt 'STARTDAY STARTTIME' ! -newermt 'ENDDAY ENDTIME' -name 'audit*.log' | xargs cat | jq 'select(.requestReceivedTimestamp >= \"STARTDAYTSTARTTIME.000000Z\" and .requestReceivedTimestamp <= \"ENDDAYTENDTIME.000000Z\") | .user.username' | sort | uniq -c | sort -n"
+
+
+Count by Source IP within the time range for audit file within time range as well :
+
+        oc debug node/NODEXXX -- chroot /host sh -c "find /var/log/kube-apiserver/ -type f -newermt 'STARTDAY STARTTIME' ! -newermt 'ENDDAY ENDTIME' -name 'audit*.log' | xargs cat | jq 'select(.requestReceivedTimestamp >= \"STARTDAYTSTARTTIME.000000Z\" and .requestReceivedTimestamp <= \"ENDDAYTENDTIME.000000Z\") | .sourceIPs[0]' | sort | uniq -c | sort -n"
+
+
