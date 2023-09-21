@@ -251,7 +251,7 @@ kubectl get --raw /metrics | grep apiserver_requested_deprecated_apis
         With the containerId we located the pod name by running “ls /var/log/containers/ | grep containerId”;
               I then suggested that you could temporarily mitigate the issue by increasing the “fs.inotify.max_user_instances” a bit by performing the command:
                              sysctl fs.inotify.max_user_instances=<new value>     
-
+az aks check-acr -g $rgname -n $clustername --acr RegistryHere --node-name NodeNameHere
 
 
 
