@@ -259,3 +259,4 @@ az aks check-acr -g $rgname -n $clustername --acr RegistryHere --node-name NodeN
 curl -v --insecure --proxy-insecure https://mcr.microsoft.com/v2/
 
 perf record -C 5 -a -g -D 99 -- sleep 60
+for i in {24..32} ; do cat /proc/irq/$i/smp_affinity; done
