@@ -38,3 +38,13 @@ cat NewMachineSet.json
  
 
 oc apply -f NewMachineSet.json
+
+
+check certificate from inside the node :
+ 
+ ----------------------------------------------------
+oc debug node/XXXX 
+chroot /host 
+bash
+for cert in /etc/kubernetes/*.crt; do     echo -n "$cert: "; openssl x509 -in "$cert" -noout -enddate; done
+------------------------------------
