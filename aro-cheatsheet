@@ -47,4 +47,18 @@ oc debug node/XXXX
 chroot /host 
 bash
 for cert in /etc/kubernetes/*.crt; do     echo -n "$cert: "; openssl x509 -in "$cert" -noout -enddate; done
+
+
+
+
+Get ARO Cluster Service Principle client ID and Client Secret :
+ 
+echo ; oc get secret azure-credentials -n kube-system --template='{{range $k, $v := .data }} {{ $k }} {{ " : " }} {{ $v | base64decode }} {{ "\n" }} {{ end }}' ; echo
+ 
+Login using Service Principal :
+ 
+               az login --service-principal --username $AROSPID --password $AROSPSecret --tenant $TENANT_ID --allow-no-subscriptions
+               az account set --subscription $AROSubID
+ 
+
 ------------------------------------
