@@ -263,3 +263,7 @@ for i in {24..32} ; do cat /proc/irq/$i/smp_affinity; done
 
 
 kubectl get po -o custom-columns="Name:metadata.name,CPU-requests:spec.containers[*].resources.requests.cpu,memory-requests:spec.containers[*].resources.requests.memory,CPU-limts:spec.containers[*].resources.limits.cpu,memory-limits:spec.containers[*].resources.limits.memory" -A
+
+# Get Node Logs
+kubectl get --raw "/api/v1/nodes/aks-nodepool1-40127532-vmss000001/proxy/logs/messages" | grep -i kubelet | grep -i nodenotschedulable
+
