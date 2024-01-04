@@ -62,3 +62,6 @@ Login using Service Principal :
  
 
 ------------------------------------
+Check ARO Cluster if Public or Private
+az aro show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query='{api:apiserverProfile.visibility,ingress:ingressProfiles[*].{name: name,visibility: visibility}}'
+
