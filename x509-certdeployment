@@ -1,0 +1,43 @@
+#!/bin/sh
+
+set -eu
+
+ca_key_name="conectelCA.key"
+ca_certificate_name="conectelCA.pem"
+validity=365
+fqdn="conectel.ro"
+
+echo "***************** Starting Certificate Authority Process *****************"
+
+# Generate a private Key
+openssl genrsa -des3 -out $ca_key_name 2048
+
+# Generate the certificate signed with previous Key
+openssl req -x509 -new -nodes -key $ca_key_name -sha256 -days $validity -out $ca_certificate_name
+
+# sudo cp ~/certs/myCA.pem /usr/local/share/ca-certificates/myCA.crt
+# sudo update-ca-certificates
+
+# Checking the name
+awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/ssl/certs/ca-certificates.crt | grep conectel
+
+
+# Generate the TLS Key and Certificate of our site
+
+openssl genrsa -out conectel.key 2048
+
+# Generate Certificate Signing Request
+openssl req -new -key conectel.key -out conectel.csr
+
+cat << EOF > ./conectel.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = $fqdn
+EOF
+
+
+openssl x509 -req -in conectel.csr -CA conectCA.pem -CAkey conectCA.key -CAcreateserial -out conectel.crt -days 365 -sha256 -extfile conectel.ext
