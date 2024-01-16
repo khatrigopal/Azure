@@ -267,3 +267,4 @@ kubectl get po -o custom-columns="Name:metadata.name,CPU-requests:spec.container
 # Get Node Logs
 kubectl get --raw "/api/v1/nodes/aks-nodepool1-40127532-vmss000001/proxy/logs/messages" | grep -i kubelet | grep -i nodenotschedulable
 
+kubectl get pods -o custom-columns=POD:.metadata.name,CONTAINER:.spec.containers[*].name,REQUEST_CPU:.spec.containers[*].resources.requests.cpu,REQUEST_MEMORY:.spec.containers[*].resources.requests.memory,LIMIT_CPU:.spec.containers[*].resources.limits.cpu,LIMIT_MEMORY:.spec.containers[*].resources.limits.memory -n kube-system
