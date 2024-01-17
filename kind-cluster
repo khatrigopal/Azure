@@ -6,3 +6,6 @@ nodes:
   - role: worker
 networking:
   disableDefaultCNI: true
+
+
+kind create cluster --config=kind-config.yaml
