@@ -1,0 +1,129 @@
+cilium hubble enable --ui
+  cilium status
+cilium connectivity test --request-timeout 30s --connect-timeout 10s
+
+
+------
+  apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "l7-rule"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: myService
+  ingress:
+  - toPorts:
+    - ports:
+      - port: '80'
+        protocol: TCP
+      rules:
+        http:
+        - method: GET
+          path: "/v1/path1"
+        - method: PUT
+          path: "/v2/path2.*"
+        - method: POST
+          path: ".*/path3"
+          headers:
+          - 'X-My-Header: true'
+  ------
+
+
+  ------
+  apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-empire-in-namespace
+spec:
+  endpointSelector:
+    matchLabels:
+      org: empire
+      class: deathstar
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            org: empire
+      toPorts:
+        - ports:
+            - port: "80" 
+              protocol: TCP
+--------
+
+
+  ------
+  apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-empire-in-namespace
+spec:
+  endpointSelector:
+    matchLabels:
+      org: empire
+      class: deathstar
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        org: empire
+        class: tiefighter
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+      rules:
+        http:
+        - method: "POST"
+          path: "/v1/request-landing"
+  - fromEndpoints:
+    - matchLabels:
+        org: empire
+        class: maintenance-droid
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+      rules:
+        http:
+        - method: "PUT"
+          path: "/v1/exhaust-port"
+  ---------
+
+
+-------
+  kubectl -n kube-system exec -ti pod/cilium-w7r54 -c cilium-agent -- hubble observe --from-label "class=tiefighter" --to-label "class=deathstar" --verdict DROPPED --last 1 -o json
+-------------
+
+  cilium hubble port-forward &
+hubble status
+
+-----
+  hubble observe --to-label "class=deathstar" --verdict DROPPED --all
+  ----
+  cilium hubble ui
+
+
+------------
+  apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "xwing-dns-deny"
+spec:
+  endpointSelector:
+    matchLabels:
+      class: xwing
+  egressDeny:
+  - toEndpoints:
+    - matchLabels:
+        namespace: kube-system
+        k8s-app: kube-dns
+
+
+  -------------
+
+  helm upgrade cilium cilium/cilium --namespace=kube-system --reuse-values --set prometheus.enabled=true --set operator.prometheus.enabled=true
+
+  helm upgrade cilium cilium/cilium --version 1.13.1 --namespace kube-system --reuse-values --set hubble.enabled=true --set hubble.metrics.enabled="{dns,drop,tcp,flow,port-distribution,httpV2}"
+  kubectl rollout restart daemonset/cilium -n kube-system
+  helm upgrade cilium cilium/cilium --version 1.13.1 --namespace kube-system --reuse-values --set hubble.enabled=true --set hubble.metrics.enabled="{dns,drop:sourceContext=pod;destinationContext=pod,tcp,flow,port-distribution,httpV2}"
+  kubectl rollout restart daemonset/cilium -n kube-system
+  kubectl exec -ti pod/xwing -- curl http://10.89.0.8:9965/metrics | grep hubble_drop
