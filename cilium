@@ -129,3 +129,19 @@ networking:
 kind create cluster --config kind-no-kp-config.yaml
 kubectl -n kube-system exec ds/cilium -- cilium status | grep KubeProxyReplacement
 
+------
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: alliance-sector-01
+nodes:
+  - role: control-plane
+  - role: worker
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none
+  serviceSubnet: "10.11.0.0/16"
+  podSubnet: "10.10.0.0/16"
+
+----
+
