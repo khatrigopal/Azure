@@ -114,5 +114,18 @@ spec:
   - ports:
     - port: "80"
       protocol: TCP
+-----------
 
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+networking:
+  disableDefaultCNI: true
+  kubeProxyMode: none
+
+kind create cluster --config kind-no-kp-config.yaml
+kubectl -n kube-system exec ds/cilium -- cilium status | grep KubeProxyReplacement
 
