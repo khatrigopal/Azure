@@ -268,3 +268,16 @@ kubectl get po -o custom-columns="Name:metadata.name,CPU-requests:spec.container
 kubectl get --raw "/api/v1/nodes/aks-nodepool1-40127532-vmss000001/proxy/logs/messages" | grep -i kubelet | grep -i nodenotschedulable
 
 kubectl get pods -o custom-columns=POD:.metadata.name,CONTAINER:.spec.containers[*].name,REQUEST_CPU:.spec.containers[*].resources.requests.cpu,REQUEST_MEMORY:.spec.containers[*].resources.requests.memory,LIMIT_CPU:.spec.containers[*].resources.limits.cpu,LIMIT_MEMORY:.spec.containers[*].resources.limits.memory -n kube-system
+
+
+
+-------------
+
+for i in {1..25}; do
+   curl -s -o /dev/null -w "%{http_code}" http://$(kubectl -n bookinfo get svc productpage -o jsonpath='{.status.loadBalancer.ingress[0].*}'):9080/productpage
+   printf "\n"
+   sleep 1
+done
+
+---------------
+
