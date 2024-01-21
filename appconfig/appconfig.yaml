@@ -1,0 +1,41 @@
+apiVersion: azconfig.io/v1
+kind: AzureAppConfigurationProvider
+metadata:
+  name: appconfigurationprovider
+spec:
+  connectionStringReference: appconfigsecret 
+  target:
+    configMapName: configmap-created-by-appconfig-provider
+    configMapData: 
+      type: json
+      key: mysettings.json
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aspnetapp-demo
+  labels:
+    app: aspnetapp-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aspnetapp-demo
+  template:
+    metadata:
+      labels:
+        app: aspnetapp-demo
+    spec:
+      containers:
+      - name: aspnetapp
+        image: nginx
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app
+      volumes:
+      - name: config-volume 
+        configMap: 
+          name: configmap-created-by-appconfig-provider
