@@ -39,3 +39,8 @@ spec:
       - name: config-volume 
         configMap: 
           name: configmap-created-by-appconfig-provider
+
+
+          ---
+
+          k create secret generic appconfigsecret --from-literal=azure_app_configuration_connection_string="Endpoint"
