@@ -281,3 +281,5 @@ done
 
 ---------------
 
+
+curl -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: application/json" -d '{"location": "westcentralus","properties":{"networkProfile":{"loadBalancerProfile":{"allocatedOutboundPorts": 0,"managedOutboundIPs":{"count": 1}}}}}' https://management.azure.com/subscriptions/406ae5ff-66f0-427a-8b68-3291af33bbae/resourceGroups/myResourceGroup/providers/Microsoft.ContainerService/managedClusters/myAKSCluster?api-version=2021-05-01
