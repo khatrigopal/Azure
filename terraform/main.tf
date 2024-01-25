@@ -34,17 +34,6 @@ variable "fw_public_ip_name" {
   default = "management-fw01-pip"
 }
 
-
-
-
-
-
-
-
-
-
-
-
 variable "aks_subnet_name" {
   type    = string
   default = "aksdefault"
@@ -114,15 +103,18 @@ resource "azurerm_virtual_network" "hubvnet" {
   address_space       = ["10.10.0.0/16"]
   dns_servers         = ["168.63.129.16", "8.8.8.8"]
   subnet {
-     name           = "sme_vnet_hub_subnet"
-     address_prefix = "10.10.1.0/24"
-   }
-  subnet {
      name           = "sme_vnet_appgw_subnet"
      address_prefix = "10.10.2.0/24"
   }
   
 } 
+
+resource "azurerm_subnet" "sme_vnet_hub_subnet" {
+  name                 = "sme_vnet_hub_subnet"
+  virtual_network_name = azurerm_virtual_network.hubvnet.name
+  resource_group_name  = azurerm_resource_group.sme_netcore_oborlean_rg.name
+  address_prefixes = ["10.10.1.0/24"]
+}
 
 resource "azurerm_subnet" "AzureFirewallSubnet" {
   name                 = "AzureFirewallSubnet"
@@ -289,8 +281,15 @@ resource "azurerm_private_dns_zone_virtual_network_link" "azmk8slink" {
 
 
 resource "azurerm_private_dns_zone" "acr_io" {
-  name                = "privatelink.northeurope.acr_io"
+  name                = "privatelink.northeurope.azurecr.io"
   resource_group_name = azurerm_resource_group.sme_netcore_oborlean_rg.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "acrlink" {
+  name                  = "azmkslink"
+  resource_group_name   = azurerm_resource_group.sme_netcore_oborlean_rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.acr_io.name
+  virtual_network_id    = azurerm_virtual_network.sme_vnet_hub.id
 }
 
 
@@ -383,15 +382,40 @@ resource "azurerm_kubernetes_cluster_node_pool" "sme_oborlean_aks" {
   }
 }
 
-#resource "azurerm_role_assignment" clusterAdmin" {
-#  scope                = azurerm_kubernetes_cluster.sme_oborlean_aks
-#  role_definition_name = "Contributor"
-#  principal_id         = azurerm_user_assigned_identity.uami.principal_id
-#}
+resource "azurerm_container_registry" "acr" {
+  name                = "oborleanacr"
+  resource_group_name = azurerm_resource_group.sme_core_oborlean_rg.name
+  location            = azurerm_resource_group.sme_core_oborlean_rg.location
+  sku                 = "Premium"
+  admin_enabled       = false
+}
+
+resource "azurerm_role_assignment" "aks_acr_integration" {
+  principal_id                     = azurerm_kubernetes_cluster.sme_oborlean_aks.kubelet_identity[0].object_id
+  role_definition_name             = "AcrPull"
+  scope                            = azurerm_container_registry.acr.id
+  skip_service_principal_aad_check = true
+}
 
 
+resource "azurerm_private_endpoint" "acr_private_endpoint" {
+  name                = "acr_private_endpoint"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.sme_core_oborlean_rg.name
+  subnet_id           = azurerm_subnet.sme_vnet_hub_subnet.id
 
-
+  private_service_connection {
+    name                           = "acr"
+    private_connection_resource_id = azurerm_container_registry.acr.id
+    subresource_names              = ["registry"]
+    is_manual_connection           = false
+  }
+  private_dns_zone_group {
+    name                 = "acr_io"
+    private_dns_zone_ids = [azurerm_private_dns_zone.acr_io.id]
+  }
+  
+}
 
 
 
@@ -422,144 +446,3 @@ resource "azurerm_kubernetes_cluster_node_pool" "sme_oborlean_aks" {
 #}
 
 
-#AICI
-
-/*
-
-
-
-
-
-
-resource "azurerm_subnet" "azurefirewallmanagement" {
-  name                 = "AzureFirewallManagementSubnet"
-  resource_group_name  = azurerm_resource_group.resource_group.name
-  virtual_network_name = azurerm_virtual_network.aksvnet.name
-  address_prefixes     = ["10.0.3.0/24"]
-}
-
-resource "azurerm_route_table" "aks_default_rt" {
-  name                          = var.aks_subnet_rt
-  location                      = azurerm_resource_group.resource_group.location
-  resource_group_name           = azurerm_resource_group.resource_group.name
-  disable_bgp_route_propagation = false
-
-  route {
-    name                   = "default"
-    address_prefix         = "0.0.0.0/0"
-    next_hop_type          = "VirtualAppliance"
-    next_hop_in_ip_address = azurerm_firewall.region1-fw01.ip_configuration[0].private_ip_address
-  }
-}
-
-resource "azurerm_subnet_route_table_association" "aks_subnet_association" {
-  subnet_id      = azurerm_subnet.aksdefault.id
-  route_table_id = azurerm_route_table.aks_default_rt.id
-
-}
-
-# --- Azure Public IP Address for Azure Firewall Outbound connectivity and Management
-
-resource "azurerm_public_ip" "region1-fw01-pip" {
-  name                = "region1-fw01-pip"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  tags = {
-    Environment = "Production"
-  }
-  depends_on = [azurerm_resource_group.resource_group]
-}
-
-resource "azurerm_public_ip" "management-fw01-pip" {
-  name                = var.fw_public_ip_name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  depends_on          = [azurerm_resource_group.resource_group]
-}
-
-# --- Azure Firewall Instance
-resource "azurerm_firewall" "region1-fw01" {
-  name                = "region1-fw01"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  sku_tier            = "Basic"
-  sku_name            = "AZFW_VNet"
-  #management_ip_configuration = azurerm_public_ip.management-fw01-pip.name
-  ip_configuration {
-    name                 = "fw-ipconfig"
-    subnet_id            = azurerm_subnet.azurefirewall.id
-    public_ip_address_id = azurerm_public_ip.region1-fw01-pip.id
-  }
-  management_ip_configuration {
-    name                 = "azfw_management_ip"
-    subnet_id            = azurerm_subnet.azurefirewallmanagement.id
-    public_ip_address_id = azurerm_public_ip.management-fw01-pip.id
-  }
-  firewall_policy_id = azurerm_firewall_policy.azfw_policy.id
-}
-
-# --- Azure Firewall Policy
-
-resource "azurerm_firewall_policy" "azfw_policy" {
-  name                     = "azfw-policy"
-  resource_group_name      = azurerm_resource_group.resource_group.name
-  location                 = azurerm_resource_group.resource_group.location
-  sku                      = "Basic"
-  threat_intelligence_mode = "Alert"
-}
-
-# --- Auzre Policies
-
-resource "azurerm_firewall_policy_rule_collection_group" "prcg" {
-  name               = "prcg"
-  firewall_policy_id = azurerm_firewall_policy.azfw_policy.id
-  priority           = 300
-  network_rule_collection {
-    name     = "netRc1"
-    priority = 200
-    action   = "Allow"
-    rule {
-      name                  = "allowall"
-      protocols             = ["TCP"]
-      source_addresses      = ["*"]
-      destination_addresses = ["*"]
-      destination_ports     = ["*"]
-    }
-  }
-}
-
-# --- Azure Kubernetes Service Cluster
-
-resource "azurerm_kubernetes_cluster" "aks" {
-  name                = "aksudr-test"
-  location            = azurerm_resource_group.resource_group.location
-  resource_group_name = azurerm_resource_group.resource_group.name
-  dns_prefix          = "aksudertest-5dd"
-
-  default_node_pool {
-    name           = "system"
-    node_count     = 1
-    vm_size        = "Standard_DS2_v2"
-    vnet_subnet_id = azurerm_subnet.aksdefault.id
-  }
-
-  network_profile {
-    network_plugin    = "azure"
-    load_balancer_sku = "standard"
-    outbound_type     = "userDefinedRouting"
-    service_cidr      = "10.13.1.0/24"
-    dns_service_ip    = "10.13.1.10"
-  }
-
-  identity {
-    type = "UserAssigned"
-    identity_ids = 
-  }
-  depends_on = [azurerm_firewall.region1-fw01]
-}
-
-*/
