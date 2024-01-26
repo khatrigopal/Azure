@@ -1,4 +1,30 @@
-# --- Define Variable used
+# SEE-Academy Project
+
+
+# ------------ Define variables used for Authentication and Authorization for Terraform Provider ------------
+
+
+variable "client_secret" {
+  type = string
+  default = ""
+}
+
+variable "client_id" {
+  type = string
+  default = ""
+}
+
+variable "tenant_id" {
+  default = ""
+}
+
+variable "subscription_id" {
+default = ""
+
+}
+
+# ------------ Define variables of Resource Groups used in the Subscription ------------
+
 variable "sme_netcore_oborlean_rg" {
   type    = string
   default = "sme_netcore_oborlean_rg"
@@ -14,7 +40,6 @@ variable "location" {
   default = "North Europe"
 }
 
-# --- Define de Hub Vnet
 variable "hub_virtual_network" {
   type        = string
   description = "The HUB Vnet"
@@ -28,27 +53,22 @@ variable "aks_virtual_network" {
   default     = "sme_vnet_aks"
 }
 
-
 variable "fw_public_ip_name" {
   type    = string
   default = "management-fw01-pip"
 }
 
-variable "aks_subnet_name" {
-  type    = string
-  default = "aksdefault"
-}
+#variable "aks_subnet_name" {
+#  type    = string
+#  default = "aksdefault"
+#}
 
 variable "aks_subnet_rt" {
   type    = string
   default = "aks-default-rt"
 }
 
-
-
-
-
-# --- Terraform Main Block
+# ------------ Terraform Initialization and Main blocks ------------
 
 terraform {
   required_providers {
@@ -68,11 +88,17 @@ provider "azurerm" {
     resource_group {
       prevent_deletion_if_contains_resources = false
     }
-
   }
+  client_id       = var.client_id
+  client_secret   = var.client_secret
+  tenant_id       = var.tenant_id
+  subscription_id = var.subscription_id
+
+  
 }
 
-# --- Azure Resource Group
+# ------------ Creating Resource Groups ------------
+
 resource "azurerm_resource_group" "sme_netcore_oborlean_rg" {
   name     = var.sme_netcore_oborlean_rg
   location = var.location
@@ -95,18 +121,14 @@ resource "azurerm_resource_group" "sme_core_oborlean_rg" {
 #  resource_group_name = azurerm_resource_group.resource_group.name
 #}
 
-# --- Azure Virtual Network
+# ------------ Creating HUB Virtual Network and Subnets------------
+
 resource "azurerm_virtual_network" "hubvnet" {
   name                = var.hub_virtual_network
   location            = azurerm_resource_group.sme_netcore_oborlean_rg.location
   resource_group_name = azurerm_resource_group.sme_netcore_oborlean_rg.name
   address_space       = ["10.10.0.0/16"]
-  dns_servers         = ["168.63.129.16", "8.8.8.8"]
-  subnet {
-     name           = "sme_vnet_appgw_subnet"
-     address_prefix = "10.10.2.0/24"
-  }
-  
+  dns_servers         = ["168.63.129.16"]
 } 
 
 resource "azurerm_subnet" "sme_vnet_hub_subnet" {
@@ -130,16 +152,80 @@ resource "azurerm_subnet" "AzureFirewallManagementSubnet" {
   address_prefixes = ["10.10.4.0/24"]
 }
 
+resource "azurerm_subnet" "AzureApplicationGateway" {
+  name                 = "AzureApplicationGatewaySubnet"
+  virtual_network_name = azurerm_virtual_network.hubvnet.name
+  resource_group_name  = azurerm_resource_group.sme_netcore_oborlean_rg.name
+  address_prefixes = ["10.10.2.0/24"]
+}
 
+# To have the DNS Server available for the rest of resources
 
+# ------------ Creating Virtual Machine with DNS Role ------------
 
+resource "azurerm_network_interface" "dnsmain" {
+  name                = "dnsnic"
+  location            = azurerm_resource_group.sme_netcore_oborlean_rg.location
+  resource_group_name = azurerm_resource_group.sme_netcore_oborlean_rg.name
+
+  ip_configuration {
+    name                          = "dnsboxconfiguration"
+    subnet_id                     = azurerm_subnet.sme_vnet_hub_subnet.id
+    private_ip_address_allocation = "Static"
+    private_ip_address            = "10.10.1.10"
+  }
+}
+
+resource "azurerm_virtual_machine" "dnsvm" {
+  name                  = "sme_oborlean_dns"
+  location              = azurerm_resource_group.sme_netcore_oborlean_rg.location
+  resource_group_name   = azurerm_resource_group.sme_netcore_oborlean_rg.name
+  network_interface_ids = [azurerm_network_interface.dnsmain.id]
+  vm_size               = "Standard_DS1_v2"
+
+  delete_os_disk_on_termination = true
+  delete_data_disks_on_termination = true
+
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+  storage_os_disk {
+    name              = "myosdisk1"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "smeoborleandns"
+    admin_username = ""
+    admin_password = ""
+  }
+  os_profile_linux_config {
+    disable_password_authentication = false
+  }
+  provisioner "local-exec" {
+    command = "az vm run-command invoke -g sme_netcore_oborlean_rg -n sme_oborlean_dns --command-id RunShellScript --scripts 'sudo curl -o /tmp/dnsconfig.sh https://raw.githubusercontent.com/OvidiuBorlean/provision/main/dnsconfig.sh && sudo chmod +x /tmp/dnsconfig.sh && sudo bash /tmp/dnsconfig.sh'"  
+  }
+  tags = {
+    environment = "jumpbox"
+  }
+  depends_on = [azurerm_network_interface.dnsmain]
+}
+
+# ------------ End of DNS VM deployment ------------
+
+# ------------ Creating SPOKE Virtual Network and Subnets ------------
 
 resource "azurerm_virtual_network" "sme_vnet_aks" {
   name                = var.aks_virtual_network
   location            = azurerm_resource_group.sme_aks_oborlean_rg.location
   resource_group_name = azurerm_resource_group.sme_aks_oborlean_rg.name
   address_space       = ["10.12.0.0/16"]
-  dns_servers         = ["168.63.129.16", "8.8.8.8"]
+  dns_servers         = ["10.10.1.10"]
+  depends_on          = [azurerm_virtual_machine.dnsvm]
 }
 
 resource "azurerm_subnet" "sme_vnet_aks_subnet_pods" {
@@ -147,9 +233,8 @@ resource "azurerm_subnet" "sme_vnet_aks_subnet_pods" {
   virtual_network_name = azurerm_virtual_network.sme_vnet_aks.name
   resource_group_name  = azurerm_resource_group.sme_aks_oborlean_rg.name
   address_prefixes = ["10.12.3.0/24"]
-  depends_on = [azurerm_virtual_network.sme_vnet_aks]
+  depends_on = [azurerm_virtual_network.sme_vnet_aks, azurerm_virtual_machine.dnsvm]
 }
-
 
 resource "azurerm_subnet" "sme_vnet_aks_subnet_nodes" {
   name                 = "sme_vnet_aks_subnet_nodes"
@@ -158,6 +243,8 @@ resource "azurerm_subnet" "sme_vnet_aks_subnet_nodes" {
   address_prefixes = ["10.12.1.0/24"]
   depends_on = [azurerm_virtual_network.sme_vnet_aks]
 }
+
+# ------------ Implement the Virtual Network Peering ------------
 
 resource "azurerm_virtual_network_peering" "sme_vnet_peering_hub" {
   name                      = "sme_vnet_peering"
@@ -173,6 +260,7 @@ resource "azurerm_virtual_network_peering" "sme_vnet_peering_spoke" {
   remote_virtual_network_id = azurerm_virtual_network.hubvnet.id
 }
 
+# ------------ Create the Azure ------------
 
 resource "azurerm_public_ip" "region1-fw01-pip" {
   name                = "region1-fw01-pip"
@@ -245,6 +333,10 @@ resource "azurerm_firewall_policy_rule_collection_group" "prcg" {
   }
 }
 
+# ------------ End of Azure Firewall deployment ------------
+
+# ------------ Define the Routing Table with a default route towards Private IP of Azure Firewall and associate with AKS Subnet ------------
+
 resource "azurerm_route_table" "sme_oborlean_routetable" {
   name                          = "sme_oborlean_routetable"
   location                      = azurerm_resource_group.sme_aks_oborlean_rg.location
@@ -265,6 +357,7 @@ resource "azurerm_subnet_route_table_association" "aks_subnet_association" {
 
 }
 
+# ------------ Define Azure Private DNS Zones and configures the links towards Vnets ------------
 
 resource "azurerm_private_dns_zone" "azmk8s" {
   name                = "privatelink.northeurope.azmk8s.io"
@@ -278,10 +371,15 @@ resource "azurerm_private_dns_zone_virtual_network_link" "azmk8slink" {
   virtual_network_id    = azurerm_virtual_network.sme_vnet_aks.id
 }
 
-
+resource "azurerm_private_dns_zone_virtual_network_link" "azmk8slinkhub" {
+  name                  = "azmkslinkhub"
+  resource_group_name   = azurerm_resource_group.sme_netcore_oborlean_rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.azmk8s.name
+  virtual_network_id    = azurerm_virtual_network.hubvnet.id
+}
 
 resource "azurerm_private_dns_zone" "acr_io" {
-  name                = "privatelink.northeurope.azurecr.io"
+  name                = "privatelink.azurecr.io"
   resource_group_name = azurerm_resource_group.sme_netcore_oborlean_rg.name
 }
 
@@ -289,17 +387,16 @@ resource "azurerm_private_dns_zone_virtual_network_link" "acrlink" {
   name                  = "azmkslink"
   resource_group_name   = azurerm_resource_group.sme_netcore_oborlean_rg.name
   private_dns_zone_name = azurerm_private_dns_zone.acr_io.name
-  virtual_network_id    = azurerm_virtual_network.sme_vnet_hub.id
+  virtual_network_id    = azurerm_virtual_network.hubvnet.id
 }
 
+# ------------ Create User Assigned Managed Identity for using in AKS and necessary roles assignments ------------
 
-# =======================================================
 resource "azurerm_user_assigned_identity" "uami" {
   resource_group_name = azurerm_resource_group.sme_core_oborlean_rg.name
   location            = azurerm_resource_group.sme_core_oborlean_rg.location
   name = "sme_aks_oborlean_uami"
 }
-
 
 resource "azurerm_role_assignment" "sme_core_contributor" {
   scope                = azurerm_resource_group.sme_aks_oborlean_rg.id
@@ -307,20 +404,13 @@ resource "azurerm_role_assignment" "sme_core_contributor" {
   principal_id         = azurerm_user_assigned_identity.uami.principal_id
 }
 
-#resource "azurerm_role_assignment" "contributor" {
-#  scope                = azurerm_resource_group.sme_core_oborlean_rg.id
-#  role_definition_name = "Contributor"
-#  principal_id         = azurerm_user_assigned_identity.uami.id
-#}
-
 resource "azurerm_role_assignment" "dnscontributor" {
   scope                = azurerm_private_dns_zone.azmk8s.id
   role_definition_name = "Private DNS Zone Contributor"
   principal_id         = azurerm_user_assigned_identity.uami.principal_id
 }
-# ==========================================================
 
-
+# ------------ Create AKS Cluster ------------
 
 resource "azurerm_kubernetes_cluster" "sme_oborlean_aks" {
   name                = "sme_oborlean_aks"
@@ -336,7 +426,6 @@ resource "azurerm_kubernetes_cluster" "sme_oborlean_aks" {
     azure_rbac_enabled  = true
     admin_group_object_ids = ["fd61ff1a-d05d-488d-a363-a09121e3444e"]
   }   
-
   default_node_pool {
     name           = "system"
     node_count     = 1
@@ -358,6 +447,7 @@ resource "azurerm_kubernetes_cluster" "sme_oborlean_aks" {
     identity_ids = [azurerm_user_assigned_identity.uami.id]
   }
   depends_on = [azurerm_private_dns_zone_virtual_network_link.azmk8slink, 
+                azurerm_private_dns_zone_virtual_network_link.azmk8slinkhub,
                 azurerm_role_assignment.sme_core_contributor, 
                 azurerm_private_dns_zone.azmk8s, 
                 azurerm_firewall.sme_oborlean_fw, 
@@ -366,10 +456,10 @@ resource "azurerm_kubernetes_cluster" "sme_oborlean_aks" {
                 azurerm_subnet_route_table_association.aks_subnet_association, 
                 azurerm_user_assigned_identity.uami, 
                 azurerm_virtual_network_peering.sme_vnet_peering_hub,
-                azurerm_virtual_network_peering.sme_vnet_peering_spoke
+                azurerm_virtual_network_peering.sme_vnet_peering_spoke,
+                azurerm_virtual_machine.dnsvm
                 ]
   }
-
 
 resource "azurerm_kubernetes_cluster_node_pool" "sme_oborlean_aks" {
   name                  = "userpool"
@@ -380,7 +470,10 @@ resource "azurerm_kubernetes_cluster_node_pool" "sme_oborlean_aks" {
   tags = {
    Environment = "Production"
   }
+  depends_on  = [azurerm_kubernetes_cluster.sme_oborlean_aks]
 }
+
+# ------------ Create Azure Container Registry ------------
 
 resource "azurerm_container_registry" "acr" {
   name                = "oborleanacr"
@@ -396,7 +489,6 @@ resource "azurerm_role_assignment" "aks_acr_integration" {
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
-
 
 resource "azurerm_private_endpoint" "acr_private_endpoint" {
   name                = "acr_private_endpoint"
@@ -417,32 +509,65 @@ resource "azurerm_private_endpoint" "acr_private_endpoint" {
   
 }
 
+# ------------ Create Jumpbox Virtual Machine ------------
 
+resource "azurerm_public_ip" "jumpbox_pip" {
+  name                = "jumpbox-pip"
+  resource_group_name = "sme_core_oborlean_rg"
+  location            = var.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  depends_on          = [azurerm_resource_group.sme_core_oborlean_rg]
+}
 
+resource "azurerm_network_interface" "main" {
+  name                = "jumpboxnic"
+  location            = azurerm_resource_group.sme_core_oborlean_rg.location
+  resource_group_name = azurerm_resource_group.sme_core_oborlean_rg.name
 
+  ip_configuration {
+    name                          = "jumpboxconfiguration"
+    subnet_id                     = azurerm_subnet.sme_vnet_hub_subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.jumpbox_pip.id
+  }
+  depends_on          = [azurerm_resource_group.sme_core_oborlean_rg]
+}
 
+resource "azurerm_virtual_machine" "jumpbox" {
+  name                  = "smeoborleanjumpbox"
+  location              = azurerm_resource_group.sme_core_oborlean_rg.location
+  resource_group_name   = azurerm_resource_group.sme_core_oborlean_rg.name
+  network_interface_ids = [azurerm_network_interface.main.id]
+  vm_size               = "Standard_DS1_v2"
 
+  delete_os_disk_on_termination = true
+  delete_data_disks_on_termination = true
 
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+  storage_os_disk {
+    name              = "myosdisk1"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "smeoborleanjumpbox"
+    admin_username = ""
+    admin_password = ""
+  }
+  os_profile_linux_config {
+    disable_password_authentication = false
+  }
+  tags = {
+    environment = "jumpbox"
+  }
+  depends_on = [azurerm_public_ip.jumpbox_pip, azurerm_resource_group.sme_core_oborlean_rg]
+}
 
-
-
-
-
-
-
-
-# --- Create Virtual Machine
-
-#resource "azurerm_network_interface" "main" {
-#  name                = "privatedns-nic"
-#  location            = azurerm_resource_group.sme_netcore_oborlean_rg.location
-#  resource_group_name = azurerm_resource_group.sme_netcore_oborlean_rg.name
-
-#  ip_configuration {
-#    name                          = "dnsserverconfiguration"
-#    subnet_id                     = azurerm_virtual_network.hubvnet.sme_vnet_hub_subnet
-#    private_ip_address_allocation = "Dynamic"
-#  }
-#}
-
-
+# ------------ End of Jumpbox Virtual Machine deployment ------------
