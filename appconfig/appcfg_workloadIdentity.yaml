@@ -1,0 +1,36 @@
+ az identity create --name appconfigmsi --resource-group aks
+
+export USER_ASSIGNED_IDENTITY_CLIENT_ID="$(az identity show --resource-group aks --name appconfigmsi --query 'clientId' -otsv)"
+echo $USER_ASSIGNED_IDENTITY_CLIENT_ID
+
+az aks update -g "${RESOURCE_GROUP}" -n myAKSCluster --enable-oidc-issuer --enable-workload-identity
+export AKS_OIDC_ISSUER="$(az aks show -n aks -g aks --query "oidcIssuerProfile.issuerUrl" -otsv)"
+echo $AKS_OIDC_ISSUER
+ 
+ az identity federated-credential create --resource-group aks --name apconfig_federated --identity-name appconfigmsi --issuer ${AKS_OIDC_ISSUER} --subject  system:serviceaccount:azappconfig-system:az-appconfig-k8s-provider --audience api://AzureADTokenExchange
+ 
+az role assignment create --assignee "${USER_ASSIGNED_IDENTITY_CLIENT_ID}" --scope /subscriptions/aa1792c8-2080-9f/resourcegroups/aks/providers/Microsoft.AppConfiguration/configurationStores/aksappconfigdemo --role "App Configuration Data Reader" 
+ 
+ 
+ EOF
+ apiVersion: azconfig.io/v1
+kind: AzureAppConfigurationProvider
+metadata:
+  name: appconfigurationprovider-sample
+spec:
+  endpoint: https://aksappconfigdemo.azconfig.io
+  target:
+    configMapName: appconfigmap
+    configMapData: 
+      type: json
+      key: mysettings.json
+  auth:
+    workloadIdentity:
+      managedIdentityClientId: <>
+ EOF
+ 
+ 
+ curl -H 'Metadata: true' http://169.254.169.254/metadata/identity/oauth2/token?resource=https%3A%2F%2F[REDACTED].azconfig.io&client_id=[REDACTED]&api-version=2018-02-01 
+ 
+ 
+ {"Settings:FontColor":"Green","Settings:Message":"Welcome to ACT Demo"}
