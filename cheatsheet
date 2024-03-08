@@ -288,3 +288,13 @@ curl -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: applicati
 array=( redis-cip-stage-eastus.redis.cache.windows.net )
 for i in "${array[@]}" do nslookup $i done
 
+
+
+=================================
+
+kubectl get pvc --all-namespaces -o json | jq -j '.items[] | "\(.metadata.namespace), \(.metadata.name), \(.spec.volumeName)\n"'
+kubectl get po -o json --all-namespaces | jq -j '.items[] | "\(.metadata.namespace), \(.metadata.name), \(.spec.volumes[].persistentVolumeClaim.claimName)\n"' | grep -v null
+
+
+=========================
+
