@@ -6,7 +6,7 @@ AKS_CLUSTER_NAME="aksappconfig"
 UAMI="appconfigmsi"
 SUBSCRIPTION=""
 LOCATION="EastUS"
-APPCFG_NAME="appconfig0001zx00"
+APPCFG_NAME="appconfig0001zx0"
 
 az group create -n $RESOURCE_GROUP --location $LOCATION
 
@@ -44,6 +44,7 @@ az aks get-credentials -n $AKS_CLUSTER_NAME -g $RESOURCE_GROUP --overwrite
 echo "Installing AppConfig Plugin"
 helm install azureappconfiguration.kubernetesprovider oci://mcr.microsoft.com/azure-app-configuration/helmchart/kubernetes-provider --namespace azappconfig-system --create-namespace
 
+echo "Deployment of AppConfig Provider"
 cat << EOF > ./appconfig.yaml
 apiVersion: azconfig.io/v1
 kind: AzureAppConfigurationProvider
@@ -62,3 +63,34 @@ spec:
 EOF
 
 kubectl apply -f ./appconfig.yaml
+
+echo "Deploy Demo Application"
+
+cat << EOF > ./appconfigdemo.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: appconfigdemo
+  labels:
+    app: appconfigdemo
+spec:
+  containers:
+  - name: appconfig
+    image: nginx
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: config-volume
+      mountPath: /app
+  volumes:
+  - name: config-volume 
+    configMap: 
+      name: appconfigmap
+EOF
+
+kubectl apply -f ./appconfigdemo.yaml
+
+echo "Waiting for Pod Deployment"
+sleep 15
+
+kubectl exec -it appconfigdemo -- apt update
