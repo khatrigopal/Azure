@@ -6,7 +6,7 @@ AKS_CLUSTER_NAME="aksappconfig"
 UAMI="appconfigmsi"
 SUBSCRIPTION=""
 LOCATION="EastUS"
-APPCFG_NAME="appconfig0001zx0"
+APPCFG_NAME="appconfig0001z"
 
 az group create -n $RESOURCE_GROUP --location $LOCATION
 
@@ -34,9 +34,8 @@ echo $AKS_OIDC_ISSUER
 echo "--->Create Federated Identity"
 az identity federated-credential create --resource-group $RESOURCE_GROUP --name apconfig_federated --identity-name $UAMI --issuer ${AKS_OIDC_ISSUER} --subject  system:serviceaccount:azappconfig-system:az-appconfig-k8s-provider --audience api://AzureADTokenExchange
 
-
 echo "Creating Role Assignments"
-az role assignment create --assignee $USER_ASSIGNED_IDENTITY_CLIENT_ID --scope $APPCFG_ID --role "App Configuration Data Reader"
+az role assignment create --assignee "$(USER_ASSIGNED_IDENTITY_CLIENT_ID)" --scope $APPCFG_ID --role "App Configuration Data Reader"
 
 echo "AKS Get Credentials"
 az aks get-credentials -n $AKS_CLUSTER_NAME -g $RESOURCE_GROUP --overwrite
@@ -44,7 +43,6 @@ az aks get-credentials -n $AKS_CLUSTER_NAME -g $RESOURCE_GROUP --overwrite
 echo "Installing AppConfig Plugin"
 helm install azureappconfiguration.kubernetesprovider oci://mcr.microsoft.com/azure-app-configuration/helmchart/kubernetes-provider --namespace azappconfig-system --create-namespace
 
-echo "Deployment of AppConfig Provider"
 cat << EOF > ./appconfig.yaml
 apiVersion: azconfig.io/v1
 kind: AzureAppConfigurationProvider
@@ -63,6 +61,7 @@ spec:
 EOF
 
 kubectl apply -f ./appconfig.yaml
+
 
 echo "Deploy Demo Application"
 
