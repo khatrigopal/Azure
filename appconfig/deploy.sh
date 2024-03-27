@@ -6,7 +6,7 @@ AKS_CLUSTER_NAME="aksappconfig"
 UAMI="appconfigmsi"
 SUBSCRIPTION=""
 LOCATION="EastUS"
-APPCFG_NAME="appconfig0001z"
+APPCFG_NAME="appconfig0001t"
 
 az group create -n $RESOURCE_GROUP --location $LOCATION
 
@@ -35,7 +35,7 @@ echo "--->Create Federated Identity"
 az identity federated-credential create --resource-group $RESOURCE_GROUP --name apconfig_federated --identity-name $UAMI --issuer ${AKS_OIDC_ISSUER} --subject  system:serviceaccount:azappconfig-system:az-appconfig-k8s-provider --audience api://AzureADTokenExchange
 
 echo "Creating Role Assignments"
-az role assignment create --assignee "$(USER_ASSIGNED_IDENTITY_CLIENT_ID)" --scope $APPCFG_ID --role "App Configuration Data Reader"
+az role assignment create --assignee $USER_ASSIGNED_IDENTITY_CLIENT_ID --scope $APPCFG_ID --role "App Configuration Data Reader"
 
 echo "AKS Get Credentials"
 az aks get-credentials -n $AKS_CLUSTER_NAME -g $RESOURCE_GROUP --overwrite
@@ -43,7 +43,7 @@ az aks get-credentials -n $AKS_CLUSTER_NAME -g $RESOURCE_GROUP --overwrite
 echo "Inserting KV in AppConfig"
 
 az appconfig kv set -n $APPCFG_NAME --key Settings:FontColor --value Purple -y
-az appconfig kv set -n $APPCFG_NAME --key Settings:Messages --value "Hello World"
+az appconfig kv set -n $APPCFG_NAME --key Settings:Messages --value "Hello World" -y
 
 echo "Installing AppConfig Plugin"
 helm install azureappconfiguration.kubernetesprovider oci://mcr.microsoft.com/azure-app-configuration/helmchart/kubernetes-provider --namespace azappconfig-system --create-namespace
