@@ -40,6 +40,11 @@ az role assignment create --assignee "$(USER_ASSIGNED_IDENTITY_CLIENT_ID)" --sco
 echo "AKS Get Credentials"
 az aks get-credentials -n $AKS_CLUSTER_NAME -g $RESOURCE_GROUP --overwrite
 
+echo "Inserting KV in AppConfig"
+
+az appconfig kv set -n $APPCFG_NAME --key Settings:FontColor --value Purple -y
+az appconfig kv set -n $APPCFG_NAME --key Settings:Messages --value "Hello World"
+
 echo "Installing AppConfig Plugin"
 helm install azureappconfiguration.kubernetesprovider oci://mcr.microsoft.com/azure-app-configuration/helmchart/kubernetes-provider --namespace azappconfig-system --create-namespace
 
