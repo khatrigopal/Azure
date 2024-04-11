@@ -1895,7 +1895,7 @@ spec:
             customer_id = ''e34c1f59-89a3-4f3d-8536-ba2aa1497e5a'
 
             # For the shared key, use either the primary or the secondary Connected Sources client authentication key
-            shared_key = "ZdeEIY8H3rjoaG1wfHQboTN4oJOZC7AbloOQwvTUOOLBbF1Xaqi440xMSEsCxAyyqefzHdD55yprRNX+HhWIkQ=="
+            shared_key = ""
 
             # The log type is the name of the event that is being submitted
             log_type = 'AKSNodeReboot'
