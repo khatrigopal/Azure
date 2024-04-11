@@ -1,0 +1,2450 @@
+------ winpod.yaml ------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: winpodnew
+  labels:
+    app: sample
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: sample
+      labels:
+        app: sample
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": windows
+      containers:
+      - name: sample
+        image: mcr.microsoft.com/windows/servercore:ltsc2019
+        resources:
+          limits:
+            cpu: 1
+            memory: 800M
+        ports:
+          - containerPort: 80
+        command:
+          - powershell
+  selector:
+    matchLabels:
+      app: sample
+
+------ winpod.yaml ---------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: winode
+  name: winode01
+spec:
+  containers:
+  - image: mcr.microsoft.com/windows/servercore:ltsc2019
+    name: winode
+    command:
+      - powershell
+      - sleep 3600
+    resources: {}
+
+----------- windns.yaml -------------
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: windows-helloworld
+  name: windows-helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: windows-helloworld
+  template:
+    metadata:
+      labels:
+        app: windows-helloworld
+      name: windows-helloworld
+    spec:
+     containers:
+      - name: windowswebserver
+        image: mcr.microsoft.com/dotnet/framework/wcf:4.8
+        command:
+        - powershell.exe
+        - -command
+        - netsh int ipv4 set dynamicportrange udp 49152 16178
+     nodeSelector:
+      kubernetes.io/os: windows
+
+------- websocket client -----------
+#!/usr/bin/python
+
+from websocket import create_connection
+ws = create_connection("ws://localhost:8000/app")
+print ("Sending 'Hello, World'...")
+ws.send("Hello, World")
+print ("Sent")
+print ("Receiving...")
+result =  ws.recv()
+print ("Received '%s'" % result)
+ws.close()
+------ websocket server ----------
+import asyncio
+
+import websockets
+
+# create handler for each connection
+
+async def handler(websocket, path):
+
+    if path == "/app":
+      print("App received")
+
+    data = await websocket.recv()
+
+    reply = f"Data recieved as:  {data}!"
+
+    await websocket.send(reply)
+
+
+
+start_server = websockets.serve(handler, "localhost", 8000)
+
+
+
+asyncio.get_event_loop().run_until_complete(start_server)
+
+asyncio.get_event_loop().run_forever()
+
+--------- vmss debug ---------------
+#!/bin/bash
+aksCluster="aks"
+aksRG="aks"
+aksNodeRG=$(az aks show -n $aksCluster -g $aksRG --query nodeResourceGroup -o tsv)
+aksVnetName=$(az network vnet list -g $aksNodeRG --query "[].[name]" -o tsv)
+aksDNSServers=$(az network vnet list -g $aksNodeRG --query "[].dhcpOptions.dnsServers" -o tsv)
+
+echo $aksNodeRG
+echo $aksVnetName
+echo $aksDNSServers
+
+#vmssName="aks-nodepool1-71056337-vmss"
+#vmssRG="MC_AKS_AKS_NORTHEUROPE"
+#SASUrl=""
+#instanceList=$(az vmss list-instances -n $vmssName -g $vmssRG --query "[].[instanceId]" -o tsv)
+#for instance in $instanceList
+#do
+#  echo "Query instance Id: $instance"
+#  #echo "---> Getting kubelet Identity"
+  #az vmss run-command invoke -g $vmssRG -n $vmssName --instance-id $instance --command-id RunShellScript --query 'value[0].message' -otsv --scripts  "cat /etc/kubern>#  echo "---> Getting DNS Configuration"
+#  az vmss run-command invoke -g $vmssRG -n $vmssName --instance-id $instance --command-id RunShellScript --query 'value[0].message' -otsv --scripts  "cat /etc/resolv>#  echo "---> Tesing Connectivity to mcr.microsoft.com"
+#  az vmss run-command invoke -g $vmssRG -n $vmssName --instance-id $instance --command-id RunShellScript --query 'value[0].message' -otsv --scripts  "curl -v --insec>#  echo "---> Tesing DNS Resolution to mcr.microsoft.com"
+#  az vmss run-command invoke -g $vmssRG -n $vmssName --instance-id $instance --command-id RunShellScript --query 'value[0].message' -otsv --scripts  "nslookup mcr.mi>
+  #echo "---> Gathering Logs"
+  #az vmss run-command invoke -g $vmssRG -n $vmssName --command-id RunShellScript --instance-id $instance --query 'value[0].message' -otsv --scripts  "tar -cvzf /tmp/>  #echo "---> Getting azcopy binary"
+  #az vmss run-command invoke -g $vmssRG -n $vmssName --command-id RunShellScript --instance-id $instance --query 'value[0].message' -otsv --scripts  "curl -L https:/>  #echo "---> Uploading Results"
+  #az vmss run-command invoke -g $vmssRG -n $vmssName --instance-id $instance --command-id RunShellScript --query 'value[0].message' -otsv --scripts  "/tmp/azcopy cop>#done
+
+------------ vmss other -----------
+
+#!/bin/bash
+vmssName="aks-nodepool1-33475044-vmss"
+vmssRG="MC_AKS_AKS_WESTEUROPE"
+instanceList=$( az vmss list-instances -n aks-nodepool1-33475044-vmss -g MC_AKS_AKS_WESTEUROPE --query "[].[instanceId]" -o tsv )
+for instance in $instanceList
+do
+  echo "Query instance Id: $instance"
+  sum=$instance
+  #az vmss run-command invoke -g $vmssRG -n $vmssName --command-id RunShellScript --instance-id $i --query 'value[0].message' -otsv --scripts  "openssl x509 -in /etc/>  az vmss run-command invoke -g MC_AKS_AKS_WESTEUROPE -n aks-nodepool1-33475044-vmss --instance-id "$sum" --command-id RunShellScript --query 'value[0].message' -otsv>done
+
+
+
+
+#az vmss get-instance-view -n aks-nodepool1-33475044-vmss -g MC_AKS_AKS_WESTEUROPE  --instance-id 1 
+
+---------- udp server ------------------
+import socket
+
+
+Index               = 0
+msgFromClient       = "Hello UDP Server"
+
+bytesToSend         = str.encode(msgFromClient)
+
+serverAddressPort   = ("127.0.0.1", 20001)
+
+bufferSize          = 1024
+
+
+# Create a UDP socket at client side
+while Index <= 1000:
+
+  UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
+  # Send to server using created UDP socket
+
+  UDPClientSocket.sendto(bytesToSend, serverAddressPort)
+
+  msgFromServer = UDPClientSocket.recvfrom(bufferSize)
+
+  msg = "Message from Server {}".format(msgFromServer[0])
+  print(Index)
+  Index += 1
+  #print(msg)
+
+--------- udp client -------------------------
+
+import socket
+localIP     = "127.0.0.1"
+localPort   = 20001
+bufferSize  = 1024
+Index = 0
+
+msgFromServer       = "Hello UDP Client"
+
+bytesToSend         = str.encode(msgFromServer)
+
+
+
+# Create a datagram socket
+
+UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
+
+
+# Bind to address and ip
+
+UDPServerSocket.bind((localIP, localPort))
+
+
+
+print("UDP server up and listening")
+
+# Listen for incoming datagrams
+
+while(True):
+    print(Index)
+
+    bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
+
+    message = bytesAddressPair[0]
+
+    address = bytesAddressPair[1]
+
+    clientMsg = "Message from Client:{}".format(message)
+    #clientIP  = "Client IP Address:{}".format(address)
+
+    print(clientMsg)
+    #print(clientIP)
+
+    # Sending a reply to client
+
+    UDPServerSocket.sendto(bytesToSend, address)
+    Index += 1
+
+------------ go k8s --------------
+
+package main
+
+import (
+  "context"
+  "fmt"
+  "k8s.io/apimachinery/pkg/apis/meta/v1"
+  "k8s.io/client-go/kubernetes"
+  "k8s.io/client-go/tools/clientcmd"
+)
+
+func main() {
+  // uses the current context in kubeconfig
+  // path-to-kubeconfig -- for example, /root/.kube/config
+  config, _ := clientcmd.BuildConfigFromFlags("", "/home/ovi/.kube/config")
+  // creates the clientset
+  //fmt.Println(config)
+  clientset, _ := kubernetes.NewForConfig(config)
+  // access the API to list pods
+  //fmt.Println(clientset)
+  pods, _ := clientset.CoreV1().Pods("").List(context.TODO(), v1.ListOptions{})
+  fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
+  fmt.Println(pods.name)
+}
+
+--------- throttling ----------------
+#!/bin/bash
+
+# Set comma as delimiter
+#IFS=','
+
+NODE=$(kubectl get --raw /api/v1/nodes/aks-nodepool1-12420863-vmss000003/proxy/metrics/cadvisor | grep -v "#" | grep container_cpu_cfs_throttled_periods_total)
+#echo $NODE
+#Read the split words into an array based on comma delimiter
+for item in $NODE;
+do
+  echo $item | cut -d'{' -f 2 | grep pod
+  echo ""
+  #read -a strarr <<< "$item"
+
+#Print the splitted words
+#echo "Namespace : ${strarr[1]}"
+done
+
+
+#kubectl get --raw /api/v1/nodes/aks-nodepool1-12420863-vmss000003/proxy/metrics/cadvisor | grep container_cpu_cfs_throttled_periods_total
+
+#container_cpu_cfs_throttled_periods_total
+
+----------------- pod test netcat ----------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: netest
+  name: netest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: netest
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: netest
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+        command: ["/bin/bash"]
+        args: ["-c", "apt update && apt install netcat -y && apt install tcptraceroute -y && while true; do printf 'HTTP/1.1 200 OK SALUT' | nc -l 8888; done"]
+        resources: {}
+
+
+-------------- all resources ----------------
+
+#!/bin/bash
+#kubectl get pod -A --field-selector=spec.nodeName=aks-nodepool1-31408996-vmss000002 -o jsonpath='{.items[*].spec.containers[*].resources.requests.cpu}'
+function test() {
+   echo $1
+}
+
+function get_cpu_request() {
+SUM_CPU_HIGH=0
+SUM_CPU_LOW=0
+SUM_TOT_REQ_CPU=0
+REQ_CPU=$(kubectl get pod -A --field-selector=spec.nodeName=$1 -o jsonpath='{.items[*].spec.containers[*].resources.requests.cpu}')
+for items in $REQ_CPU;
+  do
+    echo $items | grep m > /dev/null;
+    if [ $? -ne 0 ]
+       then
+          newItem=$(($items*1000));
+          SUM_CPU_HIGH=$(($SUM_CPU_HIGH+$newItem))
+    else
+        remove_m=$(echo $items | sed 's/.\{1\}$//');
+        SUM_CPU_LOW=$((SUM_CPU_LOW+$remove_m))
+    fi
+    let SUM_TOT_REQ_CPU=$(($SUM_CPU_HIGH+$SUM_CPU_LOW));
+done
+echo "Total CPU Requests - $SUM_TOT_REQ_CPU"
+NODE_ALLOC=$(kubectl get nodes $1 -o jsonpath='{.status.allocatable.cpu}' | sed 's/.\{1\}$//')
+echo "Total Allocatable CPU Resources on this Node: $NODE_ALLOC"
+}
+
+function get_cpu_limit() {
+SUM_CPU_HIGH=0
+SUM_CPU_LOW=0
+SUM_TOT_LIM_CPU=0
+LIM_CPU=$(kubectl get pod -A --field-selector=spec.nodeName=$1 -o jsonpath='{.items[*].spec.containers[*].resources.limits.cpu}')
+for items in $LIM_CPU;
+  do
+    echo $items | grep m > /dev/null;
+    if [ $? -ne 0 ]
+       then
+          newItem=$(($items*1000));
+          SUM_CPU_HIGH=$(($SUM_CPU_HIGH+$newItem))
+    else
+        remove_m=$(echo $items | sed 's/.\{1\}$//');
+        SUM_CPU_LOW=$((SUM_CPU_LOW+$remove_m))
+    fi
+    let SUM_TOT_LIM_CPU=$(($SUM_CPU_HIGH+$SUM_CPU_LOW));
+done
+echo "Total CPU Limits - $SUM_TOT_LIM_CPU"
+}
+
+function get_mem_request() {
+SUM_MEM_HIGH=0
+SUM_MEM_LOW=0
+SUM_TOT_LIM_MEM=0
+LIM_MEM=$(kubectl get pod -A -o jsonpath='{.items[*].spec.containers[*].resources.requests.memory}')
+for items in $LIM_MEM;
+  do
+    echo $items | grep M > /dev/null;
+    if [ $? -eq 0 ]
+       then
+          remove_m=$(echo $items | sed 's/.\{2\}$//');
+          SUM_MEM_LOW=$(($SUM_MEM_LOW+$remove_m))
+          #echo "Total Low - $SUM_MEM_LOW"
+       elif [ $? -ne 0 ]
+       then
+        remove_g=$(echo $items | sed 's/.\{2\}$//');
+        gb_to_mb=$(($remove_g*1000))
+        SUM_MEM_HIGH=$((SUM_MEM_HIGH+$gb_to_mb))
+        #echo "Total High - $SUM_MEM_HIGH"
+    fi
+    let SUM_TOT_LIM_MEM=$(($SUM_MEM_HIGH+$SUM_MEM_LOW));
+done
+echo "Total Memory Limits - $SUM_TOT_LIM_MEM"
+NODE_ALLOC=$(kubectl get nodes $1 -o jsonpath='{.status.allocatable.memory}' | sed 's/.\{2\}$//')
+echo "Total Allocatable Memory Resources on this Node: $NODE_ALLOC"
+}
+
+function get_mem_limit() {
+SUM_CPU_HIGH=0
+SUM_CPU_LOW=0
+SUM_TOT_LIM_CPU=0
+LIM_CPU=$(kubectl get pod -A -o jsonpath='{.items[*].spec.containers[*].resources.limits.cpu}')
+for items in $LIM_CPU;
+  do
+    echo $items | grep m > /dev/null;
+    if [ $? -ne 0 ]
+       then
+          newItem=$(($items*1000));
+          SUM_CPU_HIGH=$(($SUM_CPU_HIGH+$newItem))
+    else
+        remove_m=$(echo $items | sed 's/.\{1\}$//');
+        SUM_CPU_LOW=$((SUM_CPU_LOW+$remove_m))
+    fi
+    let SUM_TOT_LIM_CPU=$(($SUM_CPU_HIGH+$SUM_CPU_LOW));
+done
+echo "Total CPU Limits - $SUM_TOT_LIM_CPU"
+}
+
+NODES=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
+for instance in $NODES;
+  do
+     echo "---> AKS Node Name - $instance";
+     get_cpu_request $instance
+ #   get_cpu_limit $instance
+     get_mem_request $instance
+     echo "-------------------"
+  done
+
+
+#echo $get_cpu_request
+#get_cpu_limit
+
+---------------- snapshot delete -----------------------
+\#!/bin/bash
+CURRENT_DATE=$(($(date +%s)))
+echo "Removing all snapshots older than a week"
+RG_LIST=("MC_AKS_AKSDEMO_WESTEUROPE ")
+for RG in ${RG_LIST[@]}; do
+    az snapshot list --resource-group=$RG > snapshots.json
+    SNAPSHOTS_LENGTH=$(jq length snapshots.json)
+    echo "SWITCHING TO RG $RG containing $SNAPSHOTS_LENGTH snapshots"
+    i=0
+    while [ "$i" -lt $SNAPSHOTS_LENGTH ]; do
+        TIME_CREATED=$(jq .[$i].timeCreated snapshots.json)
+        TIME_CREATED=${TIME_CREATED:1:10}
+        DATE_CREATED=$TIME_CREATED
+        TIME_CREATED=$(date -d $TIME_CREATED +%s)
+        let TIME_DIFF=$CURRENT_DATE-$TIME_CREATED
+        UNIQUE_ID=$(jq .[$i].uniqueId snapshots.json)
+        NAME=$(jq .[$i].name snapshots.json)
+        sed -e 's/^"//' -e 's/"$//' <<<"$NAME"
+        STATE=$(jq .[$i].diskState snapshots.json)
+        if [[ "$TIME_DIFF" -gt 610 ]]; #610000 is about a week
+        then
+            echo "Deleting $UNIQUE_ID with name $NAME created on $DATE_CREATED in $RG group"
+            #echo Name: $NAME
+            NEW_NAME="${NAME:1:${#NAME}-2}"
+            echo RG: $RG
+            echo $NAME
+            echo $NEW_NAME
+            #echo $TIME_DIFF
+            az snapshot delete --name $NEW_NAME --resource-group $RG
+#           #az snapshot wait --deleted --name $NAME --resource-group $RG
+        else
+            echo "Ignoring snapshot $NAME"
+        fi
+        i=$(( i + 1 ))
+    done
+    az snapshot list --resource-group=$RG > new.json
+    NEW_SNAPSHOTS_LENGTH=$(jq length new.json)
+    let SNAPSHOTS_DIFF=$SNAPSHOTS_LENGTH-$NEW_SNAPSHOTS_LENGTH
+    echo "RG $RG now contains $NEW_SNAPSHOTS_LENGTH snapshot(s) - Deleted $SNAPSHOTS_DIFF snapshot(s)"
+done
+
+---------------------- spnexpire ----------
+  GNU nano 4.8                                                          /home/ovi/ssl/spnexpire.py                                                                     #curl -k https://aks-aks-aa1792-eadf40b6.hcp.westeurope.azmk8s.io -k -v 2>&1 | grep expire
+#https://aks-aks-aa1792-eadf40b6.hcp.westeurope.azmk8s.io
+
+--------------- ssh shell -------------------
+#/bin/bash
+
+#Define the name of the SSH Pod
+sshpod="sshpod2"
+ssh_key="./id_rsa"
+pod_image="nginx"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: kubectl ssh_nodeshell <node-name>"
+else
+  #Getting the IP Address of the Node
+  nodeIP=$(kubectl get node $1 -o wide | awk '{print $6}' | tail -n +2)
+  echo "Connecting to $nodeIP"
+  echo "Creating SSH Host Pod"
+  kubectl run $sshpod --image=$pod_image
+  echo "Waiting for Pod to be deployed"
+  sleep 5
+  kubectl exec -it $sshpod -- apt update
+  echo "Install OpenSSH"
+  kubectl exec -it $sshpod -- apt install ssh -y
+  kubectl cp $ssh_key $sshpod:/tmp
+  kubectl exec -it $sshpod -- ssh -o "StrictHostKeyChecking no" -i /tmp/id_rsa azureuser@$nodeIP
+  echo "Done"
+fi
+#echo "kubectl ssh_nodeshell <node-name>"
+
+------------- sockperf --------------
+
+#!/bin/bash
+
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo $serverIP
+    echo "Starting Sockperf Server Install"
+    kubectl exec -it $2 -- apt update
+    kubectl exec -it $2 -- apt install sockperf
+    kubectl exec -it $2 -- echo $2
+    kubectl exec $2 -- sockperf sr --tcp -i $serverIP -p $4 &
+    echo "Starting Sockperf Client Tests"
+    kubectl exec -it $3 -- apt update
+    kubectl exec -it $3 -- apt install sockperf
+    kubectl exec -it $3 -- sockperf ping-pong -i $serverIP --tcp -m 350 -t 101 -p $4  --full-rtt
+    echo "Done"
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl Sockperf Test Plugin v0.20211122"
+echo "Usage: kubectl-sockperf <pod server> <pod client> <port>"
+
+-------------- schedule on master ----------------
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: nginx
+  name: nginx
+spec:
+  nodeName: aks-nodepool1-25301541-vmss000000
+  containers:
+  - image: nginx
+    name: nginx
+    resources: {}
+  tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+  - key: CriticalAddonsOnly
+    operator: Exists
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+--------------- prometheus exporter -----------------
+import time
+import random
+from os import path
+import yaml
+from prometheus_client.core import GaugeMetricFamily, REGISTRY, CounterMetricFamily
+from prometheus_client import start_http_server
+totalRandomNumber = 0
+class RandomNumberCollector(object):
+    def __init__(self):
+        pass
+    def collect(self):
+        gauge = GaugeMetricFamily("random_number", "A random number generator, I have no better idea", labels=["randomNum"])
+        gauge.add_metric(['random_num'], random.randint(1, 20))
+        yield gauge
+        count = CounterMetricFamily("random_number_2", "A random number 2.0", labels=['randomNum'])
+        global totalRandomNumber
+        totalRandomNumber += random.randint(1,30)
+        count.add_metric(['random_num'], totalRandomNumber)
+        yield count
+if __name__ == "__main__":
+    start_http_server(9000)
+    REGISTRY.register(RandomNumberCollector())
+    while True:
+        # period between collection
+        time.sleep(1)
+
+------------- docker sql ---------
+FROM ubuntu
+RUN apt update -y \
+    && apt install python3 -y \
+    && apt install python3-pip -y \
+    && apt install libpq-dev \
+    && pip install psycopg2
+WORKDIR /app
+COPY ./pgsql.py .
+CMD ["python3","-u","/app/pgsql.py"]
+
+--------------- kubectl nmap -------------
+#!/bin/bash
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo $serverIP
+    echo "Starting NMAP Test"
+    #wget https://github.com/yunchih/static-binaries/raw/master/iperf3
+    #chmod +x ./iperf3
+    echo "Upload nmap on Pod"
+    kubectl cp ./nmap $2:/tmp/nmap
+    echo "Starting tests"
+    kubectl exec $2 -- /tmp/nmap $serverIP > ./nmaptest
+    echo "Done"
+
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl Bandwidth Test Plugin v0.20211122"
+echo "Usage: kubectl nmap <pod>"
+
+----------- kubectl bwtest -----------
+#!/bin/bash
+$port=2333
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo "Starting Iperf3 Bandwidth Tests"
+    #wget https://github.com/yunchih/static-binaries/raw/master/iperf3
+    #chmod +x ./iperf3
+    kubectl cp ./iperf3 $2:/tmp/iperf3
+    kubectl cp ./iperf3 $3:/tmp/iperf3
+    kubectl exec $2 -- /tmp/iperf3 -s -p $4 &
+    kubectl exec $3 -- /tmp/iperf3 -c $serverIP -p $4 > ./bwreport
+
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl Bandwidth Test Plugin v0.20211122"
+echo "Usage: kubectl bwtest <pod server> <pod client> <port>"
+
+------------ kubectl bwtest ------------------
+
+#!/bin/bash
+$port=2333
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo $serverIP
+    echo "Starting Iperf3 Bandwidth Tests"
+    #wget https://github.com/yunchih/static-binaries/raw/master/iperf3
+    #chmod +x ./iperf3
+    echo "Upload IPerf on Server Pod"
+    kubectl cp ./iperf3 $2:/tmp/iperf3
+    echo "Upload Iperf on Client Pod"
+    kubectl cp ./iperf3 $3:/tmp/iperf3
+    echo "Starting Server"
+    kubectl exec $2 -- /tmp/iperf3 -s -p $4 -D $
+    echo "Running Client Test"
+    kubectl exec $3 -- /tmp/iperf3 -c $serverIP -p $4 -bidir -t 30 > ./bwreport
+    echo "Done"
+
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl Bandwidth Test Plugin v0.20211122"
+echo "Usage: kubectl bwtest <pod server> <pod client> <port>"
+
+----------- python netmon -----------------
+
+from pythonping import ping
+import json
+import requests
+import datetime
+import hashlib
+import hmac
+import base64
+import subprocess
+import os
+from subprocess import Popen
+from subprocess import PIPE
+
+
+def ping_host(host):
+    ping_result = ping(target=host, count=10, timeout=2)#
+
+    return {
+        'host': host,
+        'avg_latency': ping_result.rtt_avg_ms,
+        'min_latency': ping_result.rtt_min_ms,
+        'max_latency': ping_result.rtt_max_ms,
+        'packet_loss': ping_result.packet_loss
+        #ping_result.rtt_max_ms
+    }
+
+#hosts = [
+ #   'mcr.microsoft.com',
+  #  'google.ro'
+#]
+
+#for host in hosts:
+ #   print(ping_host(host))
+
+def dnstest (host):
+    try:
+      ip_add = socket.gethostbyname(host)
+      return (ip_add)
+    except socket.gaierror as e:
+      return ("Error")
+
+
+def build_signature(customer_id, shared_key, date, content_length, method, content_type, resource):
+    x_headers = 'x-ms-date:' + date
+    string_to_hash = method + "\n" + str(content_length) + "\n" + content_type + "\n" + x_headers + "\n" + resource
+    bytes_to_hash = bytes(string_to_hash, encoding="utf-8")
+    decoded_key = base64.b64decode(shared_key)
+    encoded_hash = base64.b64encode(hmac.new(decoded_key, bytes_to_hash, digestmod=hashlib.sha256).digest()).decode()
+    authorization = "SharedKey {}:{}".format(customer_id,encoded_hash)
+    return authorization
+
+# Build and send a request to the POST API
+def post_data(customer_id, shared_key, body, log_type):
+    method = 'POST'
+    content_type = 'application/json'
+    resource = '/api/logs'
+    rfc1123date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+    content_length = len(body)
+    signature = build_signature(customer_id, shared_key, rfc1123date, content_length, method, content_type, resource)
+    uri = 'https://' + customer_id + '.ods.opinsights.azure.com' + resource + '?api-version=2016-04-01'
+
+    headers = {
+        'content-type': content_type,
+        'Authorization': signature,
+        'Log-Type': log_type,
+        'x-ms-date': rfc1123date
+    }
+
+    response = requests.post(uri,data=body, headers=headers)
+    if (response.status_code >= 200 and response.status_code <= 299):
+        print('Accepted')
+    else:
+        print("Response code: {}".format(response.status_code))
+
+
+if __name__ == "__main__":
+
+    # For test purpose, will set in program the ENV vars
+    os.environ["HOSTTARGET"] = "google.ro"
+    os.environ["PINGTEST"] = "True"
+    os.environ["HTTPTEST"] = "True"
+    os.environ["DNSTEST"] = "False"
+
+    #Getting the Environment Variables to check for the tests that needs to be run. The tests are boolean values, with pingTest configured to True by default
+    pingTest = True
+    hostTarget = os.environ['HOSTTARGET']
+    pingTest = os.environ['PINGTEST']
+    httpTest = os.environ['HTTPTEST']
+    dnsTest = os.environ['DNSTEST']
+
+
+
+    NodeStatus="kubenetmon"
+    # Update the customer ID to your Log Analytics workspace ID
+    customer_id = 'e34c1f59-89a3-4f3d-8536-ba2aa1497e5a'
+
+    # For the shared key, use either the primary or the secondary Connected Sources client authentication key
+    shared_key = "ZdeEIY8H3rjoaG1wfHQboTN4oJOZC7AbloOQwvTUOOLBbF1Xaqi440xMSEsCxAyyqefzHdD55yprRNX+HhWIkQ=="
+
+    # The log type is the name of the event that is being submitted
+    log_type = 'NetworkMonitor'
+
+    if len(hostTarget) == 0:
+        print ("Please provide the env for HOSTTARGET")
+    else:
+        hostPing = ping_host(hostTarget)
+        #print(hostPing["min_latency","avg_latency"])
+        for k in hostPing:
+            #print (k, hostPing[k])
+            os.environ["hostTest"] = hostTarget
+            os.environ["min_latency"] = str(hostPing["min_latency"])
+            os.environ["avg_latency"] = str(hostPing["avg_latency"])
+            os.environ["max_latency"] = str(hostPing["max_latency"])
+            os.environ["packet_loss"] = str(hostPing["packet_loss"])
+            #print(hostPing.values())
+            #for key in hostPing:
+            #    print (key, hostPing["min_latency"])
+            #for k, in hostPing():
+            #    print(k)
+            #print(hostPing("rtt_min_ms"))
+            #os.environ["Host"] = ping_host("google.ro")["host"]
+            #os.environ["RTT-MIN"] = ping_host("google.ro")["ping_result.rtt_min_ms"]
+            ##os.environ["RTT-MAX"] = ping_host("google.ro")["ping_result.rtt_max_ms"]
+            #os.environ["PLoss"] = ping_host("google.ro")["ping_result.pocket_loss"]
+    if dnsTest == "True":
+        dnstest(hostTarget)
+
+
+
+    commands = '''
+
+
+    echo $HOSTTARGET
+    echo $HTTPTEST
+    echo $PINGTEST
+    echo $DNSTEST
+
+    UTCScriptRunTime=`date "+%F %T"`
+
+    #hostname
+    hostname=`hostname` 2> /dev/null
+
+    # Get Linux Distribution
+
+    distro=`lsb_release -d | awk '{print $2 $3}'`
+
+
+    # Get Server uptime
+
+    if [ -f "/proc/uptime" ]; then
+
+    uptime=`cat /proc/uptime`
+
+    uptime=${uptime%%.*}
+
+    seconds=$(( uptime%60 ))
+
+    minutes=$(( uptime/60%60 ))
+
+    hours=$(( uptime/60/60%24 ))
+
+    days=$(( uptime/60/60/24 ))
+
+    uptime="$days days, $hours hours, $minutes minutes, $seconds seconds"
+
+    else
+
+    uptime=""
+
+    fi
+
+
+
+    # Get VM private IP Address
+
+
+    IPAddress=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'` 2> /dev/null
+
+
+
+    # Get VM Public IP Address
+
+    PublicIP=`wget http://ipecho.net/plain -O - -q ; echo` 2> /dev/null
+
+
+
+
+    printf '{"UTCScriptRunTime":"%s","IPAddress":"%s","PublicIP":"%s","Hostname":"%s","MinLatency":"%s","AvgLatency":"%s","MaxLatency":"%s"}\n' "$UTCScriptRunTime" "$IPAddress" "$PublicIP" "$min_latency"  "$avg_latency" "$max_latency" "$packet_loss"
+    '''
+
+
+    process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    body, err = process.communicate(commands.encode('utf-8'))
+
+
+
+    print(str(body) + "\n")
+    #post_data(customer_id, shared_key, body, log_type)
+
+----------------- outage -----------------
+mydate=$(az vmss run-command invoke -g MC_AKS_AKS_WESTEUROPE -n aks-nodepool1-27057727-vmss --command-id RunShellScript --instance-id 0 --scripts "grep nameserver /et>echo $mydate > /tmp/mydate
+grep nameserver /tmp/mydate
+if [ $? -eq 0 ]
+then
+   echo "Succes"
+fi
+
+---------------- iterator -------------
+#!/bin/bash
+
+aksClusters=$(az aks list -o table)
+
+#Print the list with echo
+#echo -e "echo: \n$aksClusters"
+
+#Set the field separator to new line
+IFS=$'\n'
+
+#Try to iterate over each line
+#echo "For loop:"
+for item in $aksClusters
+do
+        echo  $item > awk 'NR>2'
+done
+
+#Output the variable to a file
+#echo -e $list > list.txt
+
+#Try to iterate over each line from the cat command
+#echo "For loop over command output:"
+#for item in `cat list.txt`
+#do
+#        echo "Item: $item"
+#done
+--------------- nodeping.py ------------------------
+
+ovi@DESKTOP-9O5RDN0:nodeping$ cat nodeping.py
+#!/usr/bin/env python3
+
+import subprocess
+import prometheus_client
+import re
+import statistics
+import os
+import json
+import glob
+import better_exchook
+import datetime
+
+#better_exchook.install()
+
+FPING_CMDLINE = "fping -p 1000 -A -C 30 -B 1 -q -r 1".split(" ")
+FPING_REGEX = re.compile(r"^(\S*)\s*: (.*)$", re.MULTILINE)
+CONFIG_PATH = "./targets.json"
+
+registry = prometheus_client.CollectorRegistry()
+
+prometheus_exceptions_counter = \
+    prometheus_client.Counter('kube_node_ping_exceptions', 'Total number of exceptions', [], registry=registry)
+
+prom_metrics = {"sent": prometheus_client.Counter('kube_node_ping_packets_sent_total',
+                                                  'ICMP packets sent',
+                                                  ['destination_node',
+                                                   'destination_node_ip_address'],
+                                                  registry=registry), "received": prometheus_client.Counter(
+    'kube_node_ping_packets_received_total', 'ICMP packets received',
+    ['destination_node', 'destination_node_ip_address'], registry=registry), "rtt": prometheus_client.Counter(
+    'kube_node_ping_rtt_milliseconds_total', 'round-trip time',
+    ['destination_node', 'destination_node_ip_address'], registry=registry),
+                "min": prometheus_client.Gauge('kube_node_ping_rtt_min', 'minimum round-trip time',
+                                               ['destination_node', 'destination_node_ip_address'],
+                                               registry=registry),
+                "max": prometheus_client.Gauge('kube_node_ping_rtt_max', 'maximum round-trip time',
+                                               ['destination_node', 'destination_node_ip_address'],
+                                               registry=registry),
+                "mdev": prometheus_client.Gauge('kube_node_ping_rtt_mdev',
+                                                'mean deviation of round-trip times',
+                                                ['destination_node', 'destination_node_ip_address'],
+                                                registry=registry)}
+
+
+def validate_envs():
+    envs = {"MY_NODE_NAME": os.getenv("MY_NODE_NAME"), "PROMETHEUS_TEXTFILE_DIR": os.getenv("PROMETHEUS_TEXTFILE_DIR"),
+            "PROMETHEUS_TEXTFILE_PREFIX": os.getenv("PROMETHEUS_TEXTFILE_PREFIX")}
+
+    for k, v in envs.items():
+        if not v:
+            raise ValueError("{} environment variable is empty".format(k))
+
+    return envs
+
+
+@prometheus_exceptions_counter.count_exceptions()
+def compute_results(results):
+    computed = {}
+
+    matches = FPING_REGEX.finditer(results)
+    for match in matches:
+        ip = match.group(1)
+        ping_results = match.group(2)
+        if "duplicate" in ping_results:
+            continue
+        splitted = ping_results.split(" ")
+        if len(splitted) != 30:
+            raise ValueError("ping returned wrong number of results: \"{}\"".format(splitted))
+
+        positive_results = [float(x) for x in splitted if x != "-"]
+        if len(positive_results) > 0:
+            computed[ip] = {"sent": 30, "received": len(positive_results),
+                            "rtt": sum(positive_results),
+                            "max": max(positive_results), "min": min(positive_results),
+                            "mdev": statistics.pstdev(positive_results)}
+        else:
+            computed[ip] = {"sent": 30, "received": len(positive_results), "rtt": 0,
+                            "max": 0, "min": 0, "mdev": 0}
+    if not len(computed):
+        raise ValueError("regex match\"{}\" found nothing in fping output \"{}\"".format(FPING_REGEX, results))
+    return computed
+
+
+@prometheus_exceptions_counter.count_exceptions()
+def call_fping(ips):
+    cmdline = FPING_CMDLINE + ips
+    print(cmdline)
+    process = subprocess.run(cmdline, stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT, universal_newlines=True)
+    if process.returncode == 3:
+        raise ValueError("invalid arguments: {}".format(cmdline))
+    if process.returncode == 4:
+        raise OSError("fping reported syscall error: {}".format(process.stderr))
+
+    return process.stdout
+
+
+envs = validate_envs()
+
+files = glob.glob(envs["PROMETHEUS_TEXTFILE_DIR"] + "*")
+for f in files:
+    #os.remove(f)
+    print(f)
+
+labeled_prom_metrics = []
+
+while True:
+    with open("./targets.json", "r") as f:
+        config = json.loads(f.read())
+
+    if labeled_prom_metrics:
+        print("Baba",labeled_prom_metrics)
+        for node in config:
+            if (node["name"], node["ipAddress"]) not in [(metric["node_name"], metric["ip"]) for metric in labeled_prom_metrics]:
+                for k, v in prom_metrics.items():
+                    v.remove(node["name"], node["ipAddress"])
+
+    labeled_prom_metrics = []
+    print("Aici",config)
+    for node in config:
+        print("--->",node[0:])
+        metrics = {"node_name": node[0], "ip": node[1], "prom_metrics": {}}
+        #print(metrics)
+        for k, v in prom_metrics.items():
+            metrics["prom_metrics"][k] = v.labels(node[0], node[1])
+
+        labeled_prom_metrics.append(metrics)
+
+    hosts = ["8.8.8.8"]
+    out = call_fping(hosts)
+    print(out)
+    computed = compute_results(out)
+
+    for dimension in labeled_prom_metrics:
+        result = computed[dimension["ip"]]
+        dimension["prom_metrics"]["sent"].inc(computed[dimension["ip"]]["sent"])
+        dimension["prom_metrics"]["received"].inc(computed[dimension["ip"]]["received"])
+        dimension["prom_metrics"]["rtt"].inc(computed[dimension["ip"]]["rtt"])
+        dimension["prom_metrics"]["min"].set(computed[dimension["ip"]]["min"])
+        dimension["prom_metrics"]["max"].set(computed[dimension["ip"]]["max"])
+        dimension["prom_metrics"]["mdev"].set(computed[dimension["ip"]]["mdev"])
+
+    prometheus_client.write_to_textfile(
+        envs["PROMETHEUS_TEXTFILE_DIR"] + envs["PROMETHEUS_TEXTFILE_PREFIX"] + envs["MY_NODE_NAME"] + ".prom", registry)
+
+-------------------- fsusage ----------------
+#/bin/bash
+df -h | grep -v ^none | ( read header ; echo "$header" ; sort -rn -k 5) > /tmp/fsusage
+sed -i '1d' /tmp/fsusage
+#cat /tmp/fsusage
+cat /tmp/fsusage | while read line
+do
+   #echo $line
+   echo $line | awk '{print $6}'
+   exit
+done
+---------------- fspercent ---------------
+#/bin/bash
+df -h | grep -v ^none | ( read header ; echo "$header" ; sort -rn -k 5) > /tmp/fsusage
+sed -i '1d' /tmp/fsusage
+#cat /tmp/fsusage
+cat /tmp/fsusage | while read line
+do
+   #echo $line
+   echo $line | awk '{print $5}' | sed 's/.$//'
+done
+
+------------------- Disable pass auth --------------
+
+#/bin/sh
+echo "Disable Password Authentication"
+sshd_config_file="/etc/ssh/sshd_config"
+sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/' ./sshd_config
+echo "Restart SSHDaemon"
+sudo systemctl restart sshd
+
+--------- ssh ----------
+
+#/bin/bash
+echo "Getting LocalSSH Key"
+ssh_key="$(cat ~/mihai/id_rsa.pub |  tr -d '\n' | awk '{print $2}')"
+grep -i $ssh_key ~/.ssh/known_hosts > /dev/null 2>&1
+if [ $? -eq 0 ]
+then
+   echo "Am gasit"
+else
+   echo "Nu am gasit"
+fi
+
+------------- oom kill -------------
+
+#!/bin/bash
+
+# NAME: oomlog
+# PATH: $HOME/askubuntu/
+# DESC: For: https://askubuntu.com/questions/1188024/how-to-test-oom-killer-from-command-line
+# DATE: November 12, 2019.
+# PARM: Parameter 1 can be journalctl boot sequence, eg -b-2 for two boots ago.
+#       Defaults to -b-0 (current boot).
+
+BootNo="-b-0"
+[[ $1 != "" ]] && BootNo="$1"
+
+# Get time stamp if recorded with `logger` command:
+journalctl "$BootNo" | grep 'Start for oom-killer' | tail -n1
+# Print headings for last oom-killer
+journalctl "$BootNo" | grep '\[ pid ]' -B10 | tail -n11
+# Get lat oom_reaper entry's PID
+PID=$(journalctl "$BootNo" | grep oom_reaper | tail -n1 | cut -d' ' -f9)
+# Print pid information
+journalctl "$BootNo" | grep "$PID"']' | tail -n1
+# Print summary infomation
+journalctl "$BootNo" | grep oom_reaper -B2 | tail -n3
+
+-------------- oomkill pod ------------------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: oomkill
+  name: oomtest
+spec:
+  containers:
+  - image: nginx
+    name: oomkill
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "74Mi"
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+----------- logwatcher ---------------
+#!/bin/bash
+syslog="/var/log/syslog"
+signatures="./signatures.asc"
+
+while IFS= read -r line
+do
+  echo $line
+  RESULT=$(grep "$line" $syslog)
+  echo "$HOSTNAME - ${RESULT}"
+  #sleep 2
+done < "$signatures"
+
+------------ dns test --------------------
+#!/bin/bash
+
+if [ "$#" -eq 0 ];
+then
+  echo "CoreDNS CheckUp"
+  echo "Usage: "
+  echo "kubednscheck query | reload | logging"
+
+  IPS=$(kubectl get pod --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].status.podIP}')
+  for instance in $IPS;
+    do
+      for i in {1..2}; do kubectl exec -it nginx --  nc -zv $instance 53; done;
+  done
+elif [[ "$1" == "query" ]];
+then
+  IPS=$(kubectl get pod --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].status.podIP}')
+  for instance in $IPS;
+    do
+      for i in {1..2}; do kubectl exec -it nginx --  nslookup microsoft.com $instance; done;
+  done
+elif [[ "$1" == "reload" ]];
+then
+  POD=$(kubectl get pod --namespace=kube-system -l k8s-app=kube-dns -o jsonpath='{.items[*].metadata.name}')
+  for podName in $POD;
+     do
+       kubectl delete pod -n kube-system $podName;
+     done
+elif [[ "$1" == "logging" ]];
+then
+cat << EOF > ./coredns-logging.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  log.override: | # you may select any name here, but it must end with the .override file extension
+        log
+EOF
+kubectl apply -f ./coredns-logging.yaml
+fi
+
+------------- winlatte ------------------
+
+#!/bin/bash
+
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    echo $serverIP
+    echo "Starting latte Server Install"
+    sleep 2
+    kubectl exec -it $2 -- powershell Invoke-Webrequest https://github.com/microsoft/latte/releases/download/v0/latte.exe -useBasicParsing -OutFile C:\\dev\\latte.exe
+    echo "Starting Server Side"
+    sleep 2
+    kubectl exec $2 -- powershell Start-Job -Command {powershell c:\\dev\\latte.exe -a 10.224.0.120:5291 -i 65100}
+    echo "Starting latte Client Tests"
+    kubectl exec -it $3 -- powershell Invoke-Webrequest https://github.com/microsoft/latte/releases/download/v0/latte.exe -useBasicParsing -OutFile C:\\dev\\latte.exe
+    echo "Starting latte client side"
+    sleep 2
+    kubectl exec -it $3 -- powershell c:\\dev\\latte.exe -c -a 10.224.0.120:5291 -i 65100
+    echo "Done"
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "$KUBECONFIG"
+    exit 0
+fi
+
+echo "kubectl lette Test Plugin v0.20211122"
+echo "Usage: kubectl-winlatte <pod server> <pod client> <port>"
+
+--------------- kubectl scoop --------------------
+
+ovi@DESKTOP-9O5RDN0:kubectl-scoop$ cat kubectl-scoop
+#!/bin/bash
+
+if [ "$#" -lt 2 ];
+then
+  echo "Windows Nodes Logs collector"
+  echo "Usage: kubectl winlogs nodeName"
+  echo "kubectl-winlogs akswin0001"
+
+fi
+nodeName="$1"
+
+#Checking for existence of SAS Key as environment variable in SAS
+if [[ -z "${SAS}" ]]; then
+  echo "Storage Account Signature not found in environment variable. Please add the required value in SAS, eg. 'SAS=yourKey'"
+  nodeName="$1"
+  #capTime="$3"
+  #SAS_key="$3"
+  exit
+else
+cat << EOF > ./winlogs.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: windows-debug-17263
+  name: windows-scoop-17263
+  namespace: default
+spec:
+  nodeName: $1
+  containers:
+  - image: mcr.microsoft.com/windows/servercore:ltsc2022
+    imagePullPolicy: Always
+    name: windows-scoop-17263
+    resources: {}
+    volumeMounts:
+    - mountPath: /tmp
+      name: logs
+    command:
+      - powershell
+      - Write-Output "---> Installing scoop...";
+      - iex "& {$(irm get.scoop.sh)} -RunAsAdmin";
+      - Write-Output "---> Done";
+      - scoop install netcat;
+      - sleep 600;
+  volumes:
+  - name: logs
+    hostPath:
+      path: /tmp
+      type: Directory
+  dnsPolicy: ClusterFirst
+  hostNetwork: true
+  nodeSelector:
+    kubernetes.io/os: windows
+  restartPolicy: Never
+  securityContext:
+    windowsOptions:
+      hostProcess: true
+      runAsUserName: NT AUTHORITY\SYSTEM
+status: {}
+EOF
+if [[ "$2" == "--netcap" ]]
+then
+  echo "Adding Network Capture"
+  sed -i '31 i  \     \ - Write-Output "Starting Network Capture";' winlogs.yaml
+  sed -i '32 i  \     \ - C:\\k\\debug\\startpacketcapture.ps1 -NoPrompt;' winlogs.yaml
+  sed -i '33 i  \     \ - Write-Output "Stoping Network Capture";' winlogs.yaml
+  sed -i '34 i  \     \ - Stop-NetEventSession HnsPacketCapture;' winlogs.yaml
+  sed -i '35 i  \     \ - Write-Output "Upload Network Capture";' winlogs.yaml
+fi
+echo "Running the Pod"
+kubectl apply -f ./winlogs.yaml
+echo "You can extract locally the logs with the followin command: "
+echo "kubectl cp default/windows-debug-17263:/k/debug/yourLogsFile.zip ./localFileName"
+echo "Done. Cleaning up..."
+while true
+do
+  kubectl get pod windows-debug-17263 | grep Completed > /dev/null
+  if [ $? !=  0 ]
+  then
+     echo "Still working..."
+     sleep 30
+  else
+     kubectl delete pod windows-debug-17263
+     rm ./winlogs
+  fi
+done
+fi
+
+------------------ kubectl netperf ---------------------
+
+#!/bin/bash
+# optional argument handling
+if [[ "$1" == "start" ]]
+then
+    #Getting the IP Address of the server Pod
+    serverIP=$(kubectl get pod $2 -o jsonpath={.status.podIP})
+    containerImage=$(kubectl get pod $2 -o jsonpath={.spec.containers[*].image})
+    image="cilium/netperf"
+    if [[ "$containerImage" != "$image" ]];
+    then
+       echo "No Netperf image found on Pod spec. Please make sure the netperf utility is installed";
+    fi
+    echo "Checking Netperf Server"
+    #kubectl exec $2 -- sockperf sr --tcp -i $serverIP -p $4 &
+    echo "Checking Netperf client"
+    echo $netperf_config
+    kubectl exec -it $3 -- netperf -t TCP_RR -H $serverIP -- -r40000:80000 -O MIN_LATENCY,P90_LATENCY,P99_LATENCY,THROUGHPUT
+    echo "Done"
+
+fi
+
+if [[ "$1" == "version" ]]
+then
+    echo "1.0.2"
+    exit 0
+fi
+
+# optional argument handling
+if [[ "$1" == "config" ]]
+then
+    echo "-t TCP_RR -H $serverIP -- -r40000:80000 -O MIN_LATENCY,P90_LATENCY,P99_LATENCY,THROUGHPUT"
+    echo "Netperf Manual: http://www.cs.kent.edu/~farrell/dist/ref/Netperf.html#:~:text=The%20most%20common%20use%20of,other%20system%20can%20receive%20it."
+    exit 0
+fi
+
+echo "kubectl-netperf Plugin v0.20230303"
+echo "Usage: kubectl-netperf start <pod server> <pod client>"
+
+-------------- initcontainer ------------------
+
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: init
+  name: init
+spec:
+  containers:
+  - image: nginx
+    name: init
+    resources: {}
+  initContainers:
+  - name: init-myservice
+    image: busybox:1.28
+    command: ['sh', '-c', 'echo The app is running! && sleep 10']
+    securityContext:
+      runAsUser: 2000
+      allowPrivilegeEscalation: false
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+
+--------------- simplehttps.go --------------------
+
+ovi@DESKTOP-9O5RDN0:gohttps$ cat simplehttps.go
+// Copyright (c) 2020 Richard Youngkin. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
+
+package main
+
+import (
+        "crypto/tls"
+        "flag"
+        "fmt"
+        "io/ioutil"
+        "log"
+        "net/http"
+        "time"
+)
+
+func main() {
+        help := flag.Bool("help", false, "Optional, prints usage info")
+        host := flag.String("host", "", "Required flag, must be the hostname that is resolvable via DNS, or 'localhost'")
+        port := flag.String("port", "443", "The https port, defaults to 443")
+        serverCert := flag.String("srvcert", "", "Required, the name of the server's certificate file")
+        srvKey := flag.String("srvkey", "", "Required, the file name of the server's private key file")
+        flag.Parse()
+
+        usage := `usage:
+
+simpleserver -host <hostname> -srvcert <serverCertFile> -cacert <caCertFile> -srvkey <serverPrivateKeyFile> [-port <port> -certopt <certopt> -help]
+
+Options:
+  -help       Prints this message
+  -host       Required, a DNS resolvable host name or 'localhost'
+  -srvcert    Required, the name the server's certificate file
+  -srvkey     Required, the name the server's key certificate file
+  -port       Optional, the https port for the server to listen on, defaults to 443
+  `
+
+        if *help == true {
+                fmt.Println(usage)
+                return
+        }
+        if *host == "" || *serverCert == "" || *srvKey == "" {
+                log.Fatalf("One or more required fields missing:\n%s", usage)
+        }
+
+        server := &http.Server{
+                Addr:         ":" + *port,
+                ReadTimeout:  5 * time.Minute, // 5 min to allow for delays when 'curl' on OSx prompts for username/password
+                WriteTimeout: 10 * time.Second,
+                TLSConfig:    &tls.Config{ServerName: *host},
+        }
+
+        http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+                log.Printf("Received %s request for host %s from IP address %s and X-FORWARDED-FOR %s",
+                        r.Method, r.Host, r.RemoteAddr, r.Header.Get("X-FORWARDED-FOR"))
+                body, err := ioutil.ReadAll(r.Body)
+                if err != nil {
+                        body = []byte(fmt.Sprintf("error reading request body: %s", err))
+                }
+                resp := fmt.Sprintf("Hello, %s from Simple Server!", body)
+                w.Write([]byte(resp))
+                log.Printf("SimpleServer: Sent response %s", resp)
+        })
+
+        log.Printf("Starting HTTPS server on host %s and port %s", *host, *port)
+        if err := server.ListenAndServeTLS(*serverCert, *srvKey); err != nil {
+                log.Fatal(err)
+        }
+}
+
+
+----------------- webserver.go -----------------------
+
+package main
+
+import(
+        "net/http"
+        "fmt"
+        "log"
+        "crypto/tls"
+)
+
+func main() {
+
+        // generate a `Certificate` struct
+        cert, _ := tls.LoadX509KeyPair( "localhost.crt", "localhost.key" )
+
+        // create a custom server with `TLSConfig`
+        s := &http.Server{
+          Addr: ":9000",
+          Handler: nil, // use `http.DefaultServeMux`
+          TLSConfig: &tls.Config{
+                Certificates: []tls.Certificate{ cert },
+          },
+        }
+
+        // handle `/` route
+        http.HandleFunc( "/", func( res http.ResponseWriter, req *http.Request ) {
+                fmt.Fprint( res, "Hello Custom World!" )
+        } )
+
+        // run server on port "9000"
+        log.Fatal( s.ListenAndServeTLS("", "") )
+
+}
+
+
+------------------- disckcheck.yaml ----------------------
+
+ovi@DESKTOP-9O5RDN0:ds-storage$ cat disckcheck.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: diskcheck
+  name: diskcheck
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: nodeperfmon
+      tier: node
+  template:
+    metadata:
+      labels:
+        component: nodeperfmon
+        tier: node
+    spec:
+      #nodeName: $nodeName
+      containers:
+        - command:
+            - nsenter
+            - --target
+            - "1"
+            - --mount
+            - --uts
+            - --ipc
+            - --net
+            - --pid
+            - --
+            - sh
+            - -c
+            - |
+              hostname | df -h | grep /dev/sda1
+          image: alpine
+          imagePullPolicy: IfNotPresent
+          name: disable-node-exporter-service
+          resources:
+            requests:
+              cpu: 10m
+          securityContext:
+            privileged: true
+      hostPID: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      restartPolicy: Never
+  updateStrategy:
+    type: OnDelete
+
+---------------- bash dnstest ------------------
+
+#!/bin/bash
+while true;do
+  sleep $INTERVAL;
+  nslookup $HOST > /dev/null 2>&1
+  if [ $? -eq 1 ]
+    then
+        echo -n "$(date) "; echo  "Could not resolve";
+    else
+       echo -n "$(date) "; nslookup $HOST | grep "Address" | awk '{print $2}' | sed -n 2p;
+  fi
+done
+
+--------------- dnstest.go ---------------------
+
+ovi@DESKTOP-9O5RDN0:dnstest$ cat dnstestv2.go
+package main
+
+import (
+        "net"
+        "fmt"
+        "os"
+        "time"
+        "strings"
+         _"log"
+        "strconv"
+        "context"
+)
+
+var host string = ""
+
+func lookUp(host string) bool {
+   start := time.Now()
+   ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Millisecond)
+   //if cancel != nil {
+    //  fmt.Println("cancel")
+   // }
+   //ips, err := net.LookupIP(host)
+   defer cancel() // important to avoid a resource leak
+   var r net.Resolver
+   ips, err := r.LookupIP(ctx, "ip4",host)
+   if err != nil {
+      fmt.Fprintf(os.Stderr, "->Could not get IPs: %v\n", err)
+      //os.Exit(1)
+      f, ferr := os.OpenFile("dnsreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+      if ferr != nil {
+         fmt.Println(err)
+      }
+      defer f.Close()
+      timeString := start.Format("2006-01-02 15:04:05")
+      str := []string{timeString, " ", host, " ", err.Error(),  "\n"}
+      if _, err := f.WriteString(strings.Join(str,"")); err != nil {
+          fmt.Println(err)
+      }
+    }
+
+   for _, ip := range ips {
+       fmt.Println(host, " - ",ip.String())
+   }
+   elapsed := time.Since(start)
+   fmt.Println("Hostname resolved in ", elapsed)
+return true
+}
+
+func main() {
+  arg_len:= len(os.Args[1:])
+  if arg_len == 0 {
+     fmt.Println("Golang DNS Tester v1.0")
+     fmt.Println("Usage: dnstest <delay> <host1> <host2> <host3> ...\n")
+  } else {
+        timeDelay, _ := strconv.Atoi(os.Args[1])
+        fmt.Println("Testing for ", arg_len - 1, "hostnames\n")
+        for {
+        globalStart := time.Now()
+        for _, r := range os.Args[2:] {
+          lookUp(r)
+        }
+        globalElapsed := time.Since(globalStart)
+        fmt.Println("Global Elapsed Time", globalElapsed, "\n")
+        time.Sleep(time.Duration(timeDelay) * time.Second)
+        }
+   }
+}
+
+
+-----------------dns mon.py---------------------
+
+import socket
+import time
+import datetime
+
+fqdn = "wdfdsfww.microsoft.com"
+delays = 15
+current_time = datetime.datetime.now()
+if __name__ == "main":
+  print("Executing script:")
+
+while True:
+  try:
+    ip_add = socket.gethostbyname(fqdn)
+    print(ip_add)
+  except socket.gaierror as e:
+    print("Error")
+    with open ("error.log", "a") as file:
+       file.write(str(current_time) + "---" + str(e) + "\n")
+       print(e)
+       file.close()
+  time.sleep(delays)
+
+-----------------  customscript ---------------
+
+NodeStatus=`echo node rebooted`
+UTCScriptRunTime=`date "+%F %T"`
+hostname=`hostname` 2> /dev/null
+IPAddress=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'` 2> /dev/null
+# Get VM Public IP Address
+PublicIP=`wget http://ipecho.net/plain -O - -q ; echo` 2> /dev/null
+printf '{"UTCScriptRunTime":"%s", "hostname":"%s","IPAddress":"%s","PublicIP":"%s"}\n' "$UTCScriptRunTime" "$hostname" "$IPAddress" "$PublicIP"
+
+--------------- dnsmon.py ------------------
+
+ovi@DESKTOP-9O5RDN0:dns-mon$ cat dnsmon.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    component: dnsmon
+  name: dnsmon
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: dnsmon
+      tier: node
+  template:
+    metadata:
+      labels:
+        component: dnsmon
+        tier: node
+    spec:
+      containers:
+      - name: alert-on-reboot-la
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        command:
+          - nsenter
+          - --target
+          - "1"
+          - --mount
+          - --uts
+          - --ipc
+          - --net
+          - --pid
+          - --
+          - sh
+          - -c
+          - |
+            cat <<'EOF' >/etc/systemd/system/noderebootmonitor.service
+            [Unit]
+            Description=Started monitoring reboot
+            Requires=network.target
+            DefaultDependencies=no
+            Before=shutdown.target reboot.target
+
+            [Service]
+            Type=oneshot
+            RemainAfterExit=true
+            ExecStart=/usr/bin/python3 /tmp/pyup.py
+            ExecStop=/usr/bin/python3 /tmp/pyreboot.py
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            cat <<'EOF' > /tmp/pyup.py
+            import json
+            import requests
+            import datetime
+            import hashlib
+            import hmac
+            import base64
+            import subprocess
+            from subprocess import Popen
+            from subprocess import PIPE
+
+            # Update the customer ID to your Log Analytics workspace ID
+            customer_id = 'e34c1f59-89a3-4f3d-8536-ba2aa1497e5a'
+
+            # For the shared key, use either the primary or the secondary Connected Sources client authentication key
+            shared_key = "ZdeEIY8H3rjoaG1wfHQboTN4oJOZC7AbloOQwvTUOOLBbF1Xaqi440xMSEsCxAyyqefzHdD55yprRNX+HhWIkQ=="
+
+            # The log type is the name of the event that is being submitted
+            log_type = 'AKSDNSMonitor'
+
+            # An example JSON web monitor object
+
+            commands = '''
+
+            # Get VM Hostname
+
+            hostname=`hostname` 2> /dev/null
+
+            # Get VM Public IP Address
+
+            PublicIP=`wget http://ipecho.net/plain -O - -q ; echo` 2> /dev/null
+
+            # Get VM private IP Address
+
+            IPAddress=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'` 2> /dev/null
+
+            LOOKUP=`dig A Microsoft.com +short`
+            DNSCheck=`if [ -z "$LOOKUP" ]; then echo "Query returned empty value"; else echo "Query Suceeded"; fi`
+
+
+            printf '{"hostname":"%s","uptime":"%s","IPAddress":"%s", "PublicIP":"%s", "DNSCheck":"%s"}\n' "$hostname" "$uptime" "$IPAddress" "$PublicIP" "$DNSCheck"
+
+
+
+
+            printf '{"UTCScriptRunTime":"%s", "NodeStatus":"%s", "hostname":"%s","distro":"%s","uptime":"%s","IPAddress":"%s","PublicIP":"%s"}\n' "$UTCScriptRunTime" "$NodeStatus" "$hostname" "$distro" "$uptime" "$IPAddress" "$PublicIP"
+            '''
+            process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            body, err = process.communicate(commands.encode('utf-8'))
+
+
+            #####################
+            ######Functions######
+            #####################
+
+            # Build the API signature
+            def build_signature(customer_id, shared_key, date, content_length, method, content_type, resource):
+                x_headers = 'x-ms-date:' + date
+                string_to_hash = method + "\n" + str(content_length) + "\n" + content_type + "\n" + x_headers + "\n" + resource
+                bytes_to_hash = bytes(string_to_hash, encoding="utf-8")
+                decoded_key = base64.b64decode(shared_key)
+                encoded_hash = base64.b64encode(hmac.new(decoded_key, bytes_to_hash, digestmod=hashlib.sha256).digest()).decode()
+                authorization = "SharedKey {}:{}".format(customer_id,encoded_hash)
+                return authorization
+
+            # Build and send a request to the POST API
+            def post_data(customer_id, shared_key, body, log_type):
+                method = 'POST'
+                content_type = 'application/json'
+                resource = '/api/logs'
+                rfc1123date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+                content_length = len(body)
+                signature = build_signature(customer_id, shared_key, rfc1123date, content_length, method, content_type, resource)
+                uri = 'https://' + customer_id + '.ods.opinsights.azure.com' + resource + '?api-version=2016-04-01'
+
+                headers = {
+                    'content-type': content_type,
+                    'Authorization': signature,
+                    'Log-Type': log_type,
+                    'x-ms-date': rfc1123date
+                }
+
+                response = requests.post(uri,data=body, headers=headers)
+                if (response.status_code >= 200 and response.status_code <= 299):
+                    print('Accepted')
+                else:
+                    print("Response code: {}".format(response.status_code))
+
+            post_data(customer_id, shared_key, body, log_type)
+            EOF
+
+            cat <<'EOF' > /tmp/pyreboot.py
+            import json
+            import requests
+            import datetime
+            import hashlib
+            import hmac
+            import base64
+            import subprocess
+            from subprocess import Popen
+            from subprocess import PIPE
+
+            # Update the customer ID to your Log Analytics workspace ID
+            customer_id = ''e34c1f59-89a3-4f3d-8536-ba2aa1497e5a'
+
+            # For the shared key, use either the primary or the secondary Connected Sources client authentication key
+            shared_key = "ZdeEIY8H3rjoaG1wfHQboTN4oJOZC7AbloOQwvTUOOLBbF1Xaqi440xMSEsCxAyyqefzHdD55yprRNX+HhWIkQ=="
+
+            # The log type is the name of the event that is being submitted
+            log_type = 'AKSNodeReboot'
+
+            # An example JSON web monitor object
+
+            commands = '''
+
+            NodeStatus=`echo node rebooted`
+
+            UTCScriptRunTime=`date "+%F %T"`
+
+            #hostname
+            hostname=`hostname` 2> /dev/null
+
+            # Get Linux Distribution
+
+            distro=`lsb_release -d | awk '{print $2 $3}'`
+
+
+            # Get Server uptime
+
+            if [ -f "/proc/uptime" ]; then
+
+            uptime=`cat /proc/uptime`
+
+            uptime=${uptime%%.*}
+
+            seconds=$(( uptime%60 ))
+
+            minutes=$(( uptime/60%60 ))
+
+            hours=$(( uptime/60/60%24 ))
+
+            days=$(( uptime/60/60/24 ))
+
+            uptime="$days days, $hours hours, $minutes minutes, $seconds seconds"
+
+            else
+
+            uptime=""
+
+            fi
+
+
+
+            # Get VM private IP Address
+
+            IPAddress=`ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/'` 2> /dev/null
+
+
+
+            # Get VM Public IP Address
+
+            PublicIP=`wget http://ipecho.net/plain -O - -q ; echo` 2> /dev/null
+
+
+
+
+            printf '{"UTCScriptRunTime":"%s", "NodeStatus":"%s", "hostname":"%s","distro":"%s","uptime":"%s","IPAddress":"%s","PublicIP":"%s"}\n' "$UTCScriptRunTime" "$NodeStatus" "$hostname" "$distro" "$uptime" "$IPAddress" "$PublicIP"
+            '''
+            process = subprocess.Popen('/bin/bash', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            body, err = process.communicate(commands.encode('utf-8'))
+
+
+            #####################
+            ######Functions######
+            #####################
+
+            # Build the API signature
+            def build_signature(customer_id, shared_key, date, content_length, method, content_type, resource):
+                x_headers = 'x-ms-date:' + date
+                string_to_hash = method + "\n" + str(content_length) + "\n" + content_type + "\n" + x_headers + "\n" + resource
+                bytes_to_hash = bytes(string_to_hash, encoding="utf-8")
+                decoded_key = base64.b64decode(shared_key)
+                encoded_hash = base64.b64encode(hmac.new(decoded_key, bytes_to_hash, digestmod=hashlib.sha256).digest()).decode()
+                authorization = "SharedKey {}:{}".format(customer_id,encoded_hash)
+                return authorization
+
+            # Build and send a request to the POST API
+            def post_data(customer_id, shared_key, body, log_type):
+                method = 'POST'
+                content_type = 'application/json'
+                resource = '/api/logs'
+                rfc1123date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+                content_length = len(body)
+                signature = build_signature(customer_id, shared_key, rfc1123date, content_length, method, content_type, resource)
+                uri = 'https://' + customer_id + '.ods.opinsights.azure.com' + resource + '?api-version=2016-04-01'
+
+                headers = {
+                    'content-type': content_type,
+                    'Authorization': signature,
+                    'Log-Type': log_type,
+                    'x-ms-date': rfc1123date
+                }
+
+                response = requests.post(uri,data=body, headers=headers)
+                if (response.status_code >= 200 and response.status_code <= 299):
+                    print('Accepted')
+                else:
+                    print("Response code: {}".format(response.status_code))
+
+            post_data(customer_id, shared_key, body, log_type)
+            EOF
+
+            chmod +x /tmp/pyup.py
+            chmod +x /tmp/pyreboot.py
+            chmod u+x /etc/systemd/system/noderebootmonitor.service
+            systemctl start noderebootmonitor
+            sudo systemctl enable noderebootmonitor
+            while true; do sleep 100000; done
+
+        resources:
+          requests:
+            cpu: 10m
+        securityContext:
+          privileged: true
+      dnsPolicy: ClusterFirst
+      hostPID: true
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      restartPolicy: Always
+  updateStrategy:
+    type: OnDelete
+
+---------------- lookup.go -----------------
+
+
+import (
+        "net"
+        "fmt"
+        "os"
+        "time"
+)
+
+
+var host string = ""
+
+func lookUp(host string) bool {
+   start := time.Now()
+   ips, err := net.LookupIP(host)
+   if err != nil {
+      fmt.Fprintf(os.Stderr, "Could not get IPs: %v\n", err)
+      os.Exit(1)
+    }
+
+   for _, ip := range ips {
+       fmt.Println(host, " ",ip.String())
+   }
+   elapsed := time.Since(start)
+   fmt.Println(elapsed)
+return true
+}
+
+func main() {
+   globalStart := time.Now()
+   hostList := []string {
+        "www.google.ro",
+        "www.apple.com",
+        "www.microsoft.com",
+        "mcr.microsoft.com",
+        "ubuntu.com",
+        "tigera.io",
+         "udemy.com",
+   }
+   for _, r := range hostList {
+      lookUp(r)
+    }
+   globalElapsed := time.Since(globalStart)
+   fmt.Println("Global Elapsed Time", globalElapsed)
+
+}
+
+-------------- resolver.go ------------------
+
+package main
+
+import (
+    "context"
+    "net"
+    "time"
+)
+
+func main() {
+    r := &net.Resolver{
+        PreferGo: true,
+        Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+            d := net.Dialer{
+                Timeout: time.Millisecond * time.Duration(10000),
+            }
+            return d.DialContext(ctx, network, "8.8.8.8:53")
+        },
+    }
+    ip, _ := r.LookupHost(context.Background(), "www.google.com")
+
+    print(ip[0])
+}
+
+---------------- dnsctx.go --------------------
+
+
+package main
+
+import (
+    "context"
+    "net"
+    "time"
+)
+
+func main() {
+    r := &net.Resolver{
+        PreferGo: true,
+        Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+            d := net.Dialer{
+                Timeout: time.Millisecond * time.Duration(10000),
+            }
+            return d.DialContext(ctx, network, "8.8.8.8:53")
+        },
+    }
+    ip, _ := r.LookupHost(context.Background(), "www.google.com")
+
+    print(ip[0])
+}
+
+----------------- dnscheck bash ----------------------
+
+#!/bin/bash
+# declare an array called array and define 3 vales
+array=( ovidiu.systems zoso.ro xbox.com hotnews.ro adevarul.ro instagram.com facebook.com apple.com bmw.de tesla.com adobe.com virtual7.de )
+for i in "${array[@]}"
+do
+        nslookup $i
+done
+
+--------------- dns.py ----------------
+
+import dns.resolver
+
+hosts = ["ovidiu.systems", "microsoft.com", "apple.com", "zara.com", "amazon.com", "digifm.ro", "digi.ro", "timisoara.ro", "tion.ro", "hotnews.ro", "emag.ro", "cel.ro>for i in hosts:
+   result = dns.resolver.resolve(i, 'A')
+   for ipval in result:
+       print('IP', ipval.to_text())
+
+------------ getdisck -----------
+#!/bin/bash
+#find /opt -type f -printf '%s %p\n'
+dir=$(find -type d -name "/opt")
+for i in $dir; do
+  #fileSize=$(stat -c %s $i)
+  #echo $fileSize >> fileSizes.txt
+  find $dir -type f -printf '%s %p\n' | sort -nr | head -10
+done
+
+-------------- getdisck --------------
+
+import os
+
+# Define the path variable where the search will be executed
+path = "/home/"
+# Initialize an empty Dictionary that would have the fileSize on first key and fileName on the value
+dict = {}
+# Iterating through path
+for folders, subfolders, files in os.walk(path):
+# Iterating through files
+  for i in files:
+    # Get the size of the file in a variable
+    fileSize = os.stat(os.path.join(folders, i)).st_size
+    # Get the name of the file in another variable
+    fileName = os.path.join(folders, i)
+    #print(fileSize, fileName)
+    # Inserting values in the Dictionary
+    dict[fileSize] = fileName
+# Sorting the dictionary after the Key column (first). It will result in a list in sorted_items variable
+sorted_items = sorted(dict.items(), key=lambda x:x[0])
+# Getting the last 10 elements from the list as we need the biggest 10 files
+topSize = sorted_items[-9:]
+for i in topSize:
+   print(i)
+
+------------ netest --------------
+
+for ips in 10.1.10.127 10.1.12.46;
+    do
+      for i in {1..20}; do nc -zv $ips 8080; done;
+  done
+
+---------certdeploy -------------------
+
+#!/bin/sh
+
+set -eu
+
+ca_key_name="conectelCA.key"
+ca_certificate_name="conectelCA.pem"
+validity=365
+fqdn="conectel.ro"
+
+echo "***************** Starting Certificate Authority Process *****************"
+
+# Generate a private Key
+openssl genrsa -des3 -out $ca_key_name 2048
+
+# Generate the certificate signed with previous Key
+openssl req -x509 -new -nodes -key $ca_key_name -sha256 -days $validity -out $ca_certificate_name
+
+# sudo cp ~/certs/myCA.pem /usr/local/share/ca-certificates/myCA.crt
+# sudo update-ca-certificates
+
+# Checking the name
+awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/ssl/certs/ca-certificates.crt | grep conectel
+
+
+# Generate the TLS Key and Certificate of our site
+
+openssl genrsa -out conectel.key 2048
+
+# Generate Certificate Signing Request
+openssl req -new -key conectel.key -out conectel.csr
+
+cat << EOF > ./conectel.ext
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = $fqdn
+EOF
+
+
+openssl x509 -req -in conectel.csr -CA conectCA.pem -CAkey conectCA.key -CAcreateserial -out conectel.crt -days 365 -sha256 -extfile conectel.ext
+
+-------------- bastion vm terraform ---------------------
+
+ovi@DESKTOP-9O5RDN0:bastion$ cat vm.tf
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+      version = "~>3.7"
+    }
+  }
+}
+provider "azurerm" {
+  features {}
+}
+locals {
+  custom_data = <<CUSTOM_DATA
+  #!/bin/bash
+  curl -o bastion.sh https://raw.githubusercontent.com/OvidiuBorlean/provision/main/bastion.sh && chmod +x ./bastion.sh && ./bastion.sh
+  CUSTOM_DATA
+  }
+
+# Encode and pass you script
+#variable "custom_data" {
+#       default = base64encode(local.custom_data)
+#}
+
+variable "resource_group_name_prefix" {
+  default       = "bastion"
+  description   = "Prefix of the resource group name that's combined with a random ID so name is unique in your Azure subscription."
+}
+
+variable "resource_group_location" {
+  default       = "westeurope"
+  description   = "Location of the resource group."
+}
+
+resource "random_pet" "rg-name" {
+  prefix    = var.resource_group_name_prefix
+}
+
+resource "azurerm_resource_group" "rg" {
+  name      = random_pet.rg-name.id
+  location  = var.resource_group_location
+}
+
+# Create virtual network
+resource "azurerm_virtual_network" "bastion_vnet" {
+  name                = "bastionnet"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Create subnet
+resource "azurerm_subnet" "bastion_vnet_subnet" {
+  name                 = "bastionsubnet"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.bastion_vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+# Create public IPs
+resource "azurerm_public_ip" "bastionPublicIP" {
+  name                = "bastionPublicIp"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Dynamic"
+}
+# Create Network Security Group and rule
+resource "azurerm_network_security_group" "bastionnsg" {
+  name                = "bastionNSG"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+# Create network interface
+resource "azurerm_network_interface" "mybastionnic" {
+  name                = "myBastionNIC"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  ip_configuration {
+    name                          = "myNicConfiguration"
+    subnet_id                     = azurerm_subnet.bastion_vnet_subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.bastionPublicIP.id
+  }
+}
+
+# Connect the security group to the network interface
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.mybastionnic.id
+  network_security_group_id = azurerm_network_security_group.bastionnsg.id
+}
+
+# Generate random text for a unique storage account name
+resource "random_id" "randomId" {
+  keepers = {
+    # Generate a new ID only when a new resource group is defined
+    resource_group = azurerm_resource_group.rg.name
+  }
+
+  byte_length = 8
+}
+
+# Create storage account for boot diagnostics
+#resource "azurerm_storage_account" "mystorageaccount" {
+#  name                     = "diag${random_id.randomId.hex}"
+#  location                 = azurerm_resource_group.rg.location
+#  resource_group_name      = azurerm_resource_group.rg.name
+#  account_tier             = "Standard"
+#  account_replication_type = "LRS"
+#}
+
+# Create (and display) an SSH key
+resource "tls_private_key" "example_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+# Create virtual machine
+resource "azurerm_linux_virtual_machine" "bastion" {
+  name                  = "myBastion"
+  location              = azurerm_resource_group.rg.location
+  resource_group_name   = azurerm_resource_group.rg.name
+  network_interface_ids = [azurerm_network_interface.mybastionnic.id]
+  size                  = "Standard_DS1_v2"
+
+  os_disk {
+    name                 = "myOsDisk"
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference {
+    publisher = "canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  computer_name                   = "bastion"
+  admin_username                  = "azureuser"
+  admin_password                  = "LAwpq8rst"
+  disable_password_authentication = false
+
+  user_data = base64encode("apt install nginx -y")
+
+  connection {
+        host = self.public_ip_address
+        user = "azureuser"
+        type = "ssh"
+        password = "LAwpq8rst"
+        timeout = "4m"
+        agent = false
+  }
+
+ # boot_diagnostics {
+ #   storage_account_uri = azurerm_storage_account.mystorageaccount.primary_blob_endpoint
+ # }
+
+  provisioner "remote-exec" {
+        inline = [
+          "echo ovidiu > /tmp/ovidiu.txt",
+          "curl -o bastion.sh https://raw.githubusercontent.com/OvidiuBorlean/provision/main/bastion.sh ",
+          " chmod +x ./bastion.sh",
+          "./bastion.sh"
+        ]
+    }
+}
+output "resource_group_name" {
+  value = azurerm_resource_group.rg.name
+}
+
+output "public_ip_address" {
+  value = azurerm_linux_virtual_machine.bastion.public_ip_address
+}
+
+output "tls_private_key" {
+  value     = tls_private_key.example_ssh.private_key_pem
+  sensitive = true
+}
+
+---------------- script -------------
+
+#!/bin/bash
+CLUSTERS=$(az aks list --query "[[].name]" -o tsv)
+
+for CLUSTER_NAME in $CLUSTERS
+    do
+        RG_NAME=$(az aks list --query "[?name=="\'$CLUSTER_NAME\'"].resourceGroup" -o tsv)
+        MC_rg=$(az aks show -n $CLUSTER_NAME -g $RG_NAME --query nodeResourceGroup -o tsv)
+        VMSS=$(az vmss list -g $MC_rg --query [].name -o tsv)
+
+        for i in $VMSS
+            do
+                instances=$(az vmss list-instances --name $i --resource-group $MC_rg --query [].instanceId -o tsv)
+                for j in $instances
+                    do
+                        echo -e "AKS cluster: $CLUSTER_NAME \nRG name: $RG_NAME \nMC_rg name: $MC_rg \nVMSS name: $i \nInstance : $j \n"
+                        az vmss run-command invoke -g $MC_rg -n $i --command-id RunShellScript --instance-id $j --scripts "grep nameserver /etc/resolv.conf" --query v>
+                done
+        done
+done
+
+
+----------------- 
+
+
